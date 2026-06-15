@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum NotificationType {
+  FOLLOW
+  LIKE
+  COMMENT
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  branch        String?
+  year          Int?
+  refreshTokens RefreshToken[] // This connects to the RefreshToken model below
+  posts         Post[]
+  likes         Like[]
+  comments Comment[]
+  communityMemberships CommunityMember[]
+  followers Follow[] @relation("FollowingRelation")
+
+  following Follow[] @relation("FollowersRelation")
+  receivedNotifications Notification[]@relation("RecipientNotifications")
+
+
+sentNotifications Notification[]@relation("SenderNotifications")
+
+conversationMemberships ConversationParticipant[]
+
+sentMessages Message[] @relation("SentMessages")
+
+
+  bio           String?
+  avatarUrl     String?
+  @@index([name])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(uuid())
+
+  content   String
+  imageUrl String?
+  authorId  String
+  likes    Like[]
+  comments Comment[]
+  notifications Notification[]
+  author    User @relation(fields: [authorId],references: [id],onDelete: Cascade)
+
+  communityId String?
+
+community Community? @relation(fields: [communityId],references: [id],onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+model Like {
+  id String @id @default(uuid())
+
+  userId String
+
+  postId String
+
+  user User @relation( fields: [userId], references: [id],onDelete: Cascade)
+
+  post Post @relation( fields: [postId], references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id String @id @default(uuid())
+
+  content String
+
+  userId String
+  postId String
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  post Post @relation(fields: [postId],references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Follow {
+  id String @id @default(uuid())
+
+  followerId String
+
+  followingId String
+
+  follower User @relation("FollowersRelation",fields: [followerId],references: [id],onDelete: Cascade)
+
+  following User @relation("FollowingRelation",fields: [followingId],references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+
+
+model Notification {
+  id String @id @default(uuid())
+
+  recipientId String
+
+  senderId String
+
+  type NotificationType
+
+  postId String?
+
+  isRead Boolean @default(false)
+
+  recipient User @relation("RecipientNotifications",fields: [recipientId],references: [id])
+
+  sender User @relation("SenderNotifications",fields: [senderId],references: [id])
+
+  post Post? @relation(fields: [postId],references: [id],onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Community {
+  id          String   @id @default(uuid())
+
+  name        String   @unique
+
+  description String?
+
+  createdAt   DateTime @default(now())
+
+  members     CommunityMember[]
+
+  posts       Post[]
+}
+
+model CommunityMember {
+  id String @id @default(uuid())
+
+  userId String
+
+  communityId String
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  community Community @relation(fields: [communityId],references: [id],onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, communityId])
+}
+
+
+model Message {
+  id String @id @default(uuid())
+
+  conversationId String
+
+  senderId String
+
+  content String?
+
+  attachmentUrl String?
+
+  attachmentType String?
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId],references: [id],onDelete: Cascade)
+
+  sender User @relation("SentMessages",fields: [senderId],references: [id],onDelete: Cascade)
+}
+
+model Conversation {
+
+  id String @id @default(uuid())
+
+  name String?
+
+  isGroup Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+
+  messages Message[]
+}
+
+
+
+
+model ConversationParticipant {
+  id String @id @default(uuid())
+
+  conversationId String
+
+  userId String
+
+  conversation Conversation @relation(fields: [conversationId],references: [id],onDelete: Cascade)
+
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@unique([conversationId,userId])
+}
