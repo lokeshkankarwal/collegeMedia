@@ -16,36 +16,49 @@ export default function CommunityHeader({
       bg-white
       border
       rounded-xl
-      p-6
-      mb-6
+      p-4
+      sm:p-6
+      mb-4
+      sm:mb-6
       shadow-sm
+      w-full
+      min-w-0
     "
     >
       {/* Banner */}
 
       <div
         className="
-        h-40
+        h-28
+        sm:h-36
+        md:h-40
         rounded-xl
         bg-gradient-to-r
         from-blue-500
         to-purple-500
-        mb-6
+        mb-4
+        sm:mb-6
       "
       />
 
+      {/* Header content — column on mobile, row on sm+ */}
       <div
         className="
         flex
+        flex-col
+        sm:flex-row
         justify-between
         items-start
+        gap-4
       "
       >
-        <div>
+        <div className="min-w-0 flex-1 text-left">
           <h1
             className="
-            text-3xl
+            text-2xl
+            sm:text-3xl
             font-bold
+            break-words
           "
           >
             {community.name}
@@ -54,8 +67,10 @@ export default function CommunityHeader({
           <p
             className="
             text-gray-500
-            mt-3
+            mt-2
+            sm:mt-3
             max-w-2xl
+            break-words
           "
           >
             {community.description}
@@ -64,7 +79,9 @@ export default function CommunityHeader({
           <div
             className="
             flex
-            gap-6
+            flex-wrap
+            gap-4
+            sm:gap-6
             mt-4
           "
           >
@@ -85,6 +102,10 @@ export default function CommunityHeader({
             px-4
             py-2
             rounded-lg
+            w-full
+            sm:w-auto
+            shrink-0
+            min-h-[44px]
 
             ${
               community.isJoined

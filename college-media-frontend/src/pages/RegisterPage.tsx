@@ -32,23 +32,28 @@ export default function RegisterPage() {
   return (
     <div
       className="
-      h-screen
+      min-h-screen
       flex
       items-center
       justify-center
+      p-4
+      overflow-x-hidden
     "
     >
       <div
         className="
-        w-96
+        w-full
+        max-w-md
         border
         rounded-xl
-        p-6
+        p-4
+        sm:p-6
       "
       >
         <h1
           className="
-          text-3xl
+          text-2xl
+          sm:text-3xl
           font-bold
           mb-6
         "
@@ -66,6 +71,8 @@ export default function RegisterPage() {
           p-2
           w-full
           mb-3
+          min-h-[44px]
+          rounded
         "
         />
 
@@ -79,6 +86,8 @@ export default function RegisterPage() {
           p-2
           w-full
           mb-3
+          min-h-[44px]
+          rounded
         "
         />
 
@@ -92,6 +101,8 @@ export default function RegisterPage() {
           p-2
           w-full
           mb-4
+          min-h-[44px]
+          rounded
         "
         />
 
@@ -103,6 +114,7 @@ export default function RegisterPage() {
           text-white
           p-2
           rounded
+          min-h-[44px]
         "
         >
           Register

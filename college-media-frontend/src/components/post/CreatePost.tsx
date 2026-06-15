@@ -17,7 +17,7 @@ export default function CreatePost({
     useState<File | null>(null);
 
   return (
-    <div className="border rounded-xl p-4 mb-6">
+    <div className="border rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 w-full min-w-0">
       <textarea
         value={content}
         onChange={(e) =>
@@ -26,10 +26,13 @@ export default function CreatePost({
         placeholder="What's happening?"
         className="
           w-full
+          min-w-0
           border
           rounded-lg
           p-3
           mb-3
+          min-h-[80px]
+          resize-y
         "
       />
 
@@ -43,6 +46,8 @@ export default function CreatePost({
   }
   className="
     mb-3
+    w-full
+    max-w-full
     cursor-pointer
 
     file:mr-4
@@ -77,6 +82,9 @@ export default function CreatePost({
           px-6
           py-2
           rounded-lg
+          w-full
+          sm:w-auto
+          min-h-[44px]
         "
       >
         Post

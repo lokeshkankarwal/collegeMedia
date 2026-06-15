@@ -31,14 +31,18 @@ CreateCommunityModal({
       flex
       items-center
       justify-center
+      p-4
+      z-50
     "
     >
       <div
         className="
         bg-white
-        p-6
+        p-4
+        sm:p-6
         rounded-xl
-        w-96
+        w-full
+        max-w-md
       "
       >
         <h2
@@ -64,6 +68,8 @@ CreateCommunityModal({
           p-2
           w-full
           mb-3
+          min-h-[44px]
+          rounded
         "
         />
 
@@ -79,6 +85,9 @@ CreateCommunityModal({
           border
           p-2
           w-full
+          min-h-[80px]
+          rounded
+          resize-y
         "
         />
 
@@ -96,6 +105,9 @@ CreateCommunityModal({
           px-4
           py-2
           rounded
+          w-full
+          sm:w-auto
+          min-h-[44px]
         "
         >
           Create

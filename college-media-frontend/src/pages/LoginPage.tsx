@@ -38,16 +38,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="w-96 border rounded-xl p-6">
-        <h1 className="text-3xl font-bold mb-6">Login</h1>
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
+      <div className="w-full max-w-md border rounded-xl p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6">Login</h1>
 
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 w-full mb-3"
+          className="border p-2 w-full mb-3 min-h-[44px] rounded"
         />
 
         <input
@@ -55,16 +55,16 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 w-full mb-4"
+          className="border p-2 w-full mb-4 min-h-[44px] rounded"
         />
 
         <button
           onClick={login}
-          className="w-full bg-black text-white p-2 rounded"
+          className="w-full bg-black text-white p-2 rounded min-h-[44px]"
         >
           Login
         </button>
-        <Link to="/register" className="text-blue-500 hover:underline">
+        <Link to="/register" className="text-blue-500 hover:underline block mt-4 text-sm sm:text-base">
           Don't have an account? Register
         </Link>
       </div>

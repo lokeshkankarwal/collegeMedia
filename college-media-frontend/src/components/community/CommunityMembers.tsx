@@ -17,8 +17,12 @@ export default function CommunityMembers({
       bg-white
       border
       rounded-xl
-      p-5
-      mt-6
+      p-4
+      sm:p-5
+      mt-0
+      lg:mt-6
+      w-full
+      min-w-0
     "
     >
       <h2
@@ -52,10 +56,12 @@ export default function CommunityMembers({
                 w-10
                 h-10
                 rounded-full
+                object-cover
+                shrink-0
                 "
               />
 
-              <span>
+              <span className="truncate min-w-0">
                 {member.name}
               </span>
             </div>

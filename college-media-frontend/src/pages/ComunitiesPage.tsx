@@ -99,14 +99,20 @@ CommunitiesPage() {
       <div
         className="
         flex
+        flex-col
+        sm:flex-row
         justify-between
-        items-center
+        items-start
+        sm:items-center
+        gap-3
+        sm:gap-0
         mb-6
       "
       >
         <h1
           className="
-          text-3xl
+          text-2xl
+          sm:text-3xl
           font-bold
         "
         >
@@ -125,6 +131,9 @@ CommunitiesPage() {
           px-4
           py-2
           rounded-lg
+          w-full
+          sm:w-auto
+          shrink-0
         "
         >
           Create

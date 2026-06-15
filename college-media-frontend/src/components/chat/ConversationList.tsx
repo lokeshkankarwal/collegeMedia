@@ -20,13 +20,21 @@ export default function ConversationList({
   currentUserId,
   onSelect,
 }: Props) {
+  /* Responsive: full-width list on mobile (capped height), fixed sidebar on md+ */
   return (
     <div
       className="
-      w-80
+      w-full
+      md:w-80
+      shrink-0
       border-r
+      border-b
+      md:border-b-0
       overflow-y-auto
       bg-white
+      max-h-[35vh]
+      md:max-h-none
+      md:h-auto
     "
     >
       <div

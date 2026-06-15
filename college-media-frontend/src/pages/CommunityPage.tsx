@@ -132,11 +132,12 @@ export default function CommunityPage() {
 
   return (
     <MainLayout>
-      <div className="grid grid-cols-4 gap-6">
+      {/* Responsive grid: single column on mobile, sidebar on lg+ */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 w-full min-w-0">
 
         {/* Left Section */}
 
-        <div className="col-span-3">
+        <div className="col-span-1 lg:col-span-3 min-w-0">
 
           <CommunityHeader
             community={community}
@@ -185,9 +186,9 @@ export default function CommunityPage() {
 
         </div>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar — stacks below posts on mobile/tablet */}
 
-        <div>
+        <div className="min-w-0">
 
           <CommunityMembers
             members={

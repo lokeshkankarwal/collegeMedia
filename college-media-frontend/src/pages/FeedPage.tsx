@@ -149,9 +149,12 @@ export default function FeedPage() {
     <MainLayout>
       <h1
         className="
-        text-3xl
+        text-2xl
+        sm:text-3xl
         font-bold
-        mb-6
+        mb-4
+        sm:mb-6
+        text-left
       "
       >
         Feed

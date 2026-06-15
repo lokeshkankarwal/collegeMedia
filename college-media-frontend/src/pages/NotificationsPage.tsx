@@ -113,18 +113,24 @@ export default function NotificationsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto min-w-0">
         <div
           className="
             flex
+            flex-col
+            sm:flex-row
             justify-between
-            items-center
+            items-start
+            sm:items-center
+            gap-3
+            sm:gap-0
             mb-6
           "
         >
           <h1
             className="
-              text-3xl
+              text-2xl
+              sm:text-3xl
               font-bold
             "
           >
@@ -142,6 +148,9 @@ export default function NotificationsPage() {
               py-2
               rounded-lg
               hover:opacity-90
+              w-full
+              sm:w-auto
+              shrink-0
             "
           >
             Mark All Read
@@ -194,8 +203,11 @@ export default function NotificationsPage() {
                 <div
                   className="
                     flex
-                    items-center
-                    gap-4
+                    items-start
+                    sm:items-center
+                    gap-3
+                    sm:gap-4
+                    min-w-0
                   "
                 >
                   <img
@@ -210,15 +222,18 @@ export default function NotificationsPage() {
                         .sender.name
                     }
                     className="
-                      w-12
-                      h-12
+                      w-10
+                      h-10
+                      sm:w-12
+                      sm:h-12
                       rounded-full
                       object-cover
+                      shrink-0
                     "
                   />
 
-                  <div className="flex-1">
-                    <p className="font-medium">
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="font-medium break-words">
                       {getMessage(
                         notification
                       )}

@@ -105,6 +105,9 @@ export default function OtherUserProfilePage() {
             px-4
             py-2
             rounded-lg
+            w-full
+            sm:w-auto
+            min-h-[44px]
         "
       >
         Message

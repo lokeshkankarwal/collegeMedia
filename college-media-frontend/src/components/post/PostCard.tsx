@@ -30,14 +30,18 @@ export default function PostCard({
         bg-white
         border
         rounded-xl
-        p-4
+        p-3
+        sm:p-4
         mb-4
         shadow-sm
+        w-full
+        min-w-0
+        overflow-hidden
       "
     >
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
+      <div className="flex justify-between items-start sm:items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <img
             src={
               post.author.avatarUrl ||
@@ -52,8 +56,8 @@ export default function PostCard({
             "
           />
 
-          <div>
-            <h3 className="font-semibold">
+          <div className="min-w-0 text-left">
+            <h3 className="font-semibold truncate">
               {post.author.name}
             </h3>
 
@@ -68,7 +72,7 @@ export default function PostCard({
         {post.author.id === currentUserId && (
   <button
     onClick={() => onDelete(post.id)}
-    className="text-red-500 hover:text-red-700"
+    className="text-red-500 hover:text-red-700 shrink-0 text-sm sm:text-base"
   >
     Delete
   </button>
@@ -76,8 +80,8 @@ export default function PostCard({
       </div>
 
       {/* Content */}
-      <div className="mt-4">
-        <p className="whitespace-pre-wrap">
+      <div className="mt-4 text-left">
+        <p className="whitespace-pre-wrap break-words">
           {post.content}
         </p>
       </div>
@@ -91,7 +95,9 @@ export default function PostCard({
             mt-4
             rounded-xl
             w-full
-            max-h-[500px]
+            max-h-[300px]
+            sm:max-h-[400px]
+            md:max-h-[500px]
             object-cover
           "
         />

@@ -47,13 +47,16 @@ export default function SearchPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto min-w-0">
 
         <h1
           className="
-          text-3xl
+          text-2xl
+          sm:text-3xl
           font-bold
-          mb-6
+          mb-4
+          sm:mb-6
+          text-left
         "
         >
           Explore Users
@@ -62,6 +65,8 @@ export default function SearchPage() {
         <div
           className="
           flex
+          flex-col
+          sm:flex-row
           gap-3
           mb-8
         "
@@ -77,9 +82,12 @@ export default function SearchPage() {
             }
             className="
             flex-1
+            w-full
+            min-w-0
             border
             rounded-lg
             p-3
+            min-h-[44px]
           "
           />
 
@@ -91,7 +99,12 @@ export default function SearchPage() {
             bg-black
             text-white
             px-6
+            py-3
             rounded-lg
+            w-full
+            sm:w-auto
+            shrink-0
+            min-h-[44px]
           "
           >
             Search
@@ -140,7 +153,9 @@ export default function SearchPage() {
                   className="
                   flex
                   items-center
-                  gap-4
+                  gap-3
+                  sm:gap-4
+                  min-w-0
                 "
                 >
                   <img
@@ -152,13 +167,17 @@ export default function SearchPage() {
                       user.name
                     }
                     className="
-                    w-14
-                    h-14
+                    w-12
+                    h-12
+                    sm:w-14
+                    sm:h-14
                     rounded-full
+                    object-cover
+                    shrink-0
                   "
                   />
 
-                  <div>
+                  <div className="min-w-0 text-left flex-1">
                     <h2
                       className="
                       text-lg

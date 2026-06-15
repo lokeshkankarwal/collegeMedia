@@ -9,17 +9,24 @@ export default function MainLayout({
   children,
 }: Props) {
   return (
-    <div className="flex min-h-screen">
+    /* Responsive shell: column flow on small screens, row on md+ */
+    <div className="flex min-h-screen flex-col md:flex-row overflow-x-hidden w-full">
 
       <Sidebar />
 
       <main
         className="
         flex-1
+        w-full
+        min-w-0
         max-w-3xl
         mx-auto
         border-x
-        p-6
+        p-4
+        sm:p-5
+        md:p-6
+        pb-20
+        md:pb-6
       "
       >
         {children}
@@ -30,6 +37,7 @@ export default function MainLayout({
         hidden
         lg:block
         w-80
+        shrink-0
         p-6
       "
       >

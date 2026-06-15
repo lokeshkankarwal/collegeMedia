@@ -22,11 +22,15 @@ export default function MessageBubble({
     >
       <div
         className={`
-        max-w-md
-        px-4
-        py-3
+        max-w-[85%]
+        sm:max-w-md
+        px-3
+        sm:px-4
+        py-2
+        sm:py-3
         rounded-2xl
         shadow-sm
+        break-words
 
         ${
           isMine
@@ -48,7 +52,10 @@ export default function MessageBubble({
               className="
               rounded-xl
               mb-2
-              max-w-xs
+              w-full
+              max-w-full
+              sm:max-w-xs
+              object-cover
             "
             />
           )}

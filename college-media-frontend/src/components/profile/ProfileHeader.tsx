@@ -17,14 +17,24 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
       bg-white
       rounded-xl
       border
-      p-6
-      mb-6
+      p-4
+      sm:p-6
+      mb-4
+      sm:mb-6
+      w-full
+      min-w-0
     "
     >
+      {/* Profile layout: column on mobile, row on sm+ */}
       <div
         className="
         flex
-        gap-6
+        flex-col
+        sm:flex-row
+        gap-4
+        sm:gap-6
+        items-center
+        sm:items-start
       "
       >
         <img
@@ -33,17 +43,23 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
           }
           alt={user.name}
           className="
-          w-28
-          h-28
+          w-20
+          h-20
+          sm:w-28
+          sm:h-28
           rounded-full
+          object-cover
+          shrink-0
         "
         />
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 w-full text-center sm:text-left">
           <h1
             className="
-            text-3xl
+            text-2xl
+            sm:text-3xl
             font-bold
+            break-words
           "
           >
             {user.name}
@@ -53,6 +69,7 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
             className="
             text-gray-500
             mt-2
+            break-words
           "
           >
             {user.bio}
@@ -61,7 +78,11 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
           <div
             className="
             flex
-            gap-6
+            flex-wrap
+            justify-center
+            sm:justify-start
+            gap-4
+            sm:gap-6
             mt-4
           "
           >
@@ -87,6 +108,9 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
                 px-4
                 py-2
                 rounded-lg
+                w-full
+                sm:w-auto
+                min-h-[44px]
               "
               >
                 Edit Profile
@@ -100,6 +124,9 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
                 px-4
                 py-2
                 rounded-lg
+                w-full
+                sm:w-auto
+                min-h-[44px]
               "
               >
                 {user.isFollowing ? "Unfollow" : "Follow"}

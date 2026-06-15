@@ -83,14 +83,19 @@ export default function ChatWindow({
       flex
       flex-col
       bg-white
+      min-w-0
+      min-h-0
     "
     >
       <div
         className="
         border-b
-        p-4
+        p-3
+        sm:p-4
         font-semibold
-        text-lg
+        text-base
+        sm:text-lg
+        truncate
       "
       >
         {chatName ||
@@ -136,18 +141,27 @@ export default function ChatWindow({
       <div
         className="
         border-t
-        p-4
+        p-3
+        sm:p-4
         flex
+        flex-wrap
+        sm:flex-nowrap
         gap-2
+        min-w-0
       "
       >
         <label
           className="
           cursor-pointer
           border
-          px-4
+          px-3
+          sm:px-4
           py-2
           rounded-lg
+          shrink-0
+          min-h-[44px]
+          flex
+          items-center
         "
         >
           📎
@@ -174,9 +188,12 @@ export default function ChatWindow({
           }}
           className="
           flex-1
+          min-w-0
           border
           rounded-lg
-          p-3
+          p-2
+          sm:p-3
+          min-h-[44px]
         "
         />
 
@@ -185,8 +202,12 @@ export default function ChatWindow({
           className="
           bg-black
           text-white
-          px-6
+          px-4
+          sm:px-6
+          py-2
           rounded-lg
+          shrink-0
+          min-h-[44px]
         "
         >
           Send

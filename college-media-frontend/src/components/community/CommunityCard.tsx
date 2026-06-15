@@ -45,16 +45,19 @@ export default function CommunityCard({
       transition
       "
     >
-      {/* Header */}
-
+      {/* Header — stacks on mobile for join button */}
       <div
         className="
         flex
+        flex-col
+        sm:flex-row
         justify-between
         items-start
+        gap-3
+        sm:gap-0
         "
       >
-        <div>
+        <div className="min-w-0 flex-1 text-left">
 
           <h2
             className="
@@ -85,6 +88,10 @@ export default function CommunityCard({
             py-2
             rounded-lg
             font-medium
+            w-full
+            sm:w-auto
+            shrink-0
+            min-h-[44px]
 
             ${
               community.isJoined

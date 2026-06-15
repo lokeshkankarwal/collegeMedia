@@ -233,11 +233,17 @@ export default function MessagesPage() {
     <MainLayout>
       <div
         className="
-        h-[80vh]
+        h-[70vh]
+        sm:h-[75vh]
+        md:h-[80vh]
         flex
+        flex-col
+        md:flex-row
         border
         rounded-xl
         overflow-hidden
+        w-full
+        min-w-0
       "
       >
         <ConversationList
@@ -287,6 +293,8 @@ export default function MessagesPage() {
             items-center
             justify-center
             text-gray-500
+            min-w-0
+            p-4
           "
           >
             Select a conversation

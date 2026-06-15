@@ -86,9 +86,13 @@ export default function AIAssistantPage() {
 
       <div
         className="
+        w-full
         max-w-5xl
         mx-auto
-        h-[80vh]
+        min-w-0
+        h-[70vh]
+        sm:h-[75vh]
+        md:h-[80vh]
         flex
         flex-col
       "
@@ -96,12 +100,15 @@ export default function AIAssistantPage() {
 
         <div
           className="
-          mb-6
+          mb-4
+          sm:mb-6
+          text-left
         "
         >
           <h1
             className="
-            text-3xl
+            text-2xl
+            sm:text-3xl
             font-bold
           "
           >
@@ -118,14 +125,17 @@ export default function AIAssistantPage() {
           </p>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions — responsive grid: 1 col mobile, 2 tablet, 4 desktop */}
 
         <div
           className="
           grid
-          grid-cols-4
+          grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-4
           gap-3
-          mb-6
+          mb-4
+          sm:mb-6
         "
         >
           <button
@@ -138,6 +148,9 @@ export default function AIAssistantPage() {
             border
             rounded-lg
             p-3
+            min-h-[44px]
+            text-sm
+            sm:text-base
           "
           >
             Generate Post
@@ -153,6 +166,9 @@ export default function AIAssistantPage() {
             border
             rounded-lg
             p-3
+            min-h-[44px]
+            text-sm
+            sm:text-base
           "
           >
             Interview Prep
@@ -168,6 +184,9 @@ export default function AIAssistantPage() {
             border
             rounded-lg
             p-3
+            min-h-[44px]
+            text-sm
+            sm:text-base
           "
           >
             Resume Review
@@ -183,6 +202,9 @@ export default function AIAssistantPage() {
             border
             rounded-lg
             p-3
+            min-h-[44px]
+            text-sm
+            sm:text-base
           "
           >
             DSA Help
@@ -224,9 +246,12 @@ export default function AIAssistantPage() {
               >
                 <div
                   className={`
-                  max-w-2xl
-                  p-4
+                  max-w-[90%]
+                  sm:max-w-2xl
+                  p-3
+                  sm:p-4
                   rounded-xl
+                  break-words
 
                   ${
                     message.role ===
@@ -253,12 +278,14 @@ export default function AIAssistantPage() {
 
         </div>
 
-        {/* Input */}
+        {/* Input — stacks on mobile for touch-friendly targets */}
 
         <div
           className="
           mt-4
           flex
+          flex-col
+          sm:flex-row
           gap-3
         "
         >
@@ -272,9 +299,13 @@ export default function AIAssistantPage() {
             placeholder="Ask AI..."
             className="
             flex-1
+            w-full
+            min-w-0
             border
             rounded-lg
-            p-4
+            p-3
+            sm:p-4
+            min-h-[44px]
           "
           />
 
@@ -285,8 +316,14 @@ export default function AIAssistantPage() {
             className="
             bg-black
             text-white
-            px-8
+            px-6
+            sm:px-8
+            py-3
             rounded-lg
+            w-full
+            sm:w-auto
+            shrink-0
+            min-h-[44px]
           "
           >
             Send

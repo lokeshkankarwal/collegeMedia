@@ -91,12 +91,15 @@ export default function CreateGroupPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full max-w-3xl mx-auto min-w-0">
         <h1
           className="
-            text-3xl
+            text-2xl
+            sm:text-3xl
             font-bold
-            mb-6
+            mb-4
+            sm:mb-6
+            text-left
           "
         >
           Create Group
@@ -114,12 +117,15 @@ export default function CreateGroupPage() {
             p-3
             w-full
             mb-4
+            min-h-[44px]
           "
         />
 
         <div
           className="
             flex
+            flex-col
+            sm:flex-row
             gap-3
             mb-6
           "
@@ -132,9 +138,12 @@ export default function CreateGroupPage() {
             }
             className="
               flex-1
+              w-full
+              min-w-0
               border
               rounded-lg
               p-3
+              min-h-[44px]
             "
           />
 
@@ -144,7 +153,12 @@ export default function CreateGroupPage() {
               bg-black
               text-white
               px-6
+              py-3
               rounded-lg
+              w-full
+              sm:w-auto
+              shrink-0
+              min-h-[44px]
             "
           >
             Search
@@ -210,7 +224,9 @@ export default function CreateGroupPage() {
                   className="
                     flex
                     items-center
-                    gap-4
+                    gap-3
+                    sm:gap-4
+                    min-w-0
                   "
                 >
                   <img
@@ -220,13 +236,17 @@ export default function CreateGroupPage() {
                     }
                     alt={user.name}
                     className="
-                      w-12
-                      h-12
+                      w-10
+                      h-10
+                      sm:w-12
+                      sm:h-12
                       rounded-full
+                      object-cover
+                      shrink-0
                     "
                   />
 
-                  <h2>{user.name}</h2>
+                  <h2 className="truncate flex-1 min-w-0 text-left">{user.name}</h2>
 
                   <div className="ml-auto text-xl">
                     {selected
