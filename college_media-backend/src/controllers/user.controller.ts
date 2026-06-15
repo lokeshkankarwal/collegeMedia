@@ -202,7 +202,7 @@ export const getUserPosts = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.userId as string;
 
     const posts = await prisma.post.findMany({
       where: {
@@ -238,7 +238,7 @@ export const getUserPosts = async (
     });
 
     const formattedPosts = posts.map(
-      (post) => ({
+      (post: any) => ({
         ...post,
         likesCount: post._count.likes,
         commentsCount:

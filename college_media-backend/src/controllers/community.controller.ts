@@ -108,7 +108,7 @@ export const getCommunities =
   ): Promise<void> => {
     try {
       const communityId =
-        req.params.communityId;
+        req.params.communityId as string;
 
       const userId =
         req.userId!;
@@ -160,7 +160,7 @@ export const leaveCommunity =
   ): Promise<void> => {
     try {
       const communityId =
-        req.params.communityId;
+        req.params.communityId as string;
 
       const userId =
         req.userId!;
@@ -193,7 +193,7 @@ export const getCommunity =
   ): Promise<void> => {
     try {
       const communityId =
-        req.params.communityId;
+        req.params.communityId as string;
 
       const community =
         await prisma.community.findUnique({
@@ -239,7 +239,7 @@ export const createCommunityPost =
   ): Promise<void> => {
     try {
       const communityId =
-        req.params.communityId;
+        req.params.communityId as string;
 
       const { content } =
         req.body;
@@ -305,7 +305,7 @@ export const getCommunityPosts =
   ): Promise<void> => {
     try {
       const communityId =
-        req.params.communityId;
+        req.params.communityId as string;
 
       const posts =
         await prisma.post.findMany({

@@ -8,9 +8,9 @@
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+  
     "esModuleInterop": true,
-    "target": "esnext",
+    
     "types": [],
     // For nodejs:
     // "lib": ["esnext"],
@@ -21,6 +21,12 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    "target": "ES2022",
+    
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,

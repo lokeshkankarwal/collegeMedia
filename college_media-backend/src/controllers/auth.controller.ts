@@ -161,7 +161,7 @@ export const refresh = async (
     const payload = jwt.verify(
       refreshToken,
       process.env.JWT_REFRESH_SECRET!
-    ) as {
+    ) as unknown as {
       userId: string;
     };
 

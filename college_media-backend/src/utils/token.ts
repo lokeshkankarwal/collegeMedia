@@ -7,10 +7,10 @@ export const generateAccessToken = (
     {
       userId,
     },
-    process.env.JWT_ACCESS_SECRET!,
+    process.env.JWT_ACCESS_SECRET! as string,
     {
       expiresIn:
-        process.env.JWT_ACCESS_EXPIRES || "7d",
+        (process.env.JWT_ACCESS_EXPIRES as any) || "7d",
     }
   );
 };
@@ -22,10 +22,10 @@ export const generateRefreshToken = (
     {
       userId,
     },
-    process.env.JWT_REFRESH_SECRET!,
+    process.env.JWT_REFRESH_SECRET! as string,
     {
       expiresIn:
-        process.env.JWT_REFRESH_EXPIRES || "7d",
+        (process.env.JWT_REFRESH_EXPIRES as any) || "7d",
     }
   );
 };

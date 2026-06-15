@@ -104,7 +104,7 @@ export const likePost = async (
 ): Promise<void> => {
   try {
     // 🛠️ Fixed: Explicit type assertion to guarantee strict string compilation
-    const postId = req.params.postId ;
+    const postId = req.params.postId as string;
     console.log("Liking post:", postId, "by user:", req.userId);
 
     const existingLike = await prisma.like.findFirst({
@@ -163,7 +163,7 @@ export const unlikePost = async (
 ): Promise<void> => {
   try {
     // 1. Force extract the parameter as a strict string
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
 
     await prisma.like.deleteMany({
       where: {
@@ -192,7 +192,7 @@ export const addComment = async (
   res: Response
 ): Promise<void> => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
     const { content } = req.body;
 
     if (!content) {
@@ -255,7 +255,7 @@ export const getComments = async (
   res: Response
 ): Promise<void> => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
 
     const comments = await prisma.comment.findMany({
       where: {
@@ -292,7 +292,7 @@ export const updatePost = async (
   res: Response
 ): Promise<void> => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
     const { content } = req.body;
 
     const post = await prisma.post.findUnique({
@@ -341,7 +341,7 @@ export const deletePost = async (
   res: Response
 ): Promise<void> => {
   try {
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
 
     const post = await prisma.post.findUnique({
       where: {

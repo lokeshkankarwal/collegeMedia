@@ -16,7 +16,7 @@ export const getNotifications =
         await prisma.notification.findMany({
           where: {
             recipientId:
-              req.userId,
+              req.userId as string,
           },
 
           orderBy: {
@@ -52,7 +52,7 @@ export const markRead = async (
 ): Promise<void> => {
   try {
     const notificationId =
-      req.params.id;
+      req.params.id as string;
 
     await prisma.notification.update({
       where: {

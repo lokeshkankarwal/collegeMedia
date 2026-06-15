@@ -30,9 +30,9 @@ export const authenticate = (
     const token = authHeader.split(" ")[1];
 
     const decoded = jwt.verify(
-      token,
-      process.env.JWT_ACCESS_SECRET!
-    ) as {
+      token as string,
+      process.env.JWT_SECRET!
+    ) as unknown as {
       userId: string;
     };
 

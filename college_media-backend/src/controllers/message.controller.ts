@@ -16,7 +16,7 @@ export const getConversation =
   ): Promise<void> => {
     try {
       const otherUserId =
-        req.params.userId;
+        req.params.userId as string;
 
       const currentUserId =
         req.userId!;

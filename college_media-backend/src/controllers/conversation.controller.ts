@@ -93,7 +93,7 @@ export const getMessages = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const conversationId = req.params.conversationId;
+    const conversationId = req.params.conversationId as string;
 
     console.log("Loading messages for:", conversationId);
 

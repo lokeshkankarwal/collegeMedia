@@ -7,7 +7,7 @@ export const toggleLike = async (
 ) => {
   try {
     const userId = req.userId!;
-    const postId = req.params.postId;
+    const postId = req.params.postId as string;
 
     const existingLike =
       await prisma.like.findFirst({

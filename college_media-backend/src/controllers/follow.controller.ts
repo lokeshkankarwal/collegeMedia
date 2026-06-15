@@ -12,7 +12,7 @@ export const followUser = async (
 ): Promise<void> => {
   try {
     const followingId =
-      req.params.userId;
+      req.params.userId as string;
 
     const followerId =
       req.userId!;
@@ -80,7 +80,7 @@ export const unfollowUser = async (
 ): Promise<void> => {
   try {
     const followingId =
-      req.params.userId;
+      req.params.userId as string;
 
     const followerId =
       req.userId!;
