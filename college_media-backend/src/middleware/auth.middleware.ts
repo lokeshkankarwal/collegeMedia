@@ -31,7 +31,7 @@ export const authenticate = (
 
     const decoded = jwt.verify(
       token as string,
-      process.env.JWT_SECRET!
+      process.env.JWT_ACCESS_SECRET!
     ) as unknown as {
       userId: string;
     };

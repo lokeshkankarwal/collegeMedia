@@ -26,7 +26,8 @@
     "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": "./src",
-    
+
+   
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,

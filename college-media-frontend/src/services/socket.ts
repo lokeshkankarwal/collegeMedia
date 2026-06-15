@@ -1,17 +1,18 @@
 import { io } from "socket.io-client";
 
-const token =
-localStorage.getItem(
-  "accessToken"
-);
+const getToken = () => localStorage.getItem("accessToken");
 
-export const socket = io(
-  "http://localhost:8080",
-  {
-    autoConnect: false,
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:8080";
 
-    auth: {
-      token,
-    },
-  }
-);
+export const socket = io(SOCKET_URL, {
+  autoConnect: false,
+  auth: {
+    token: getToken(),
+  },
+});
+
+// Update token in socket auth when it changes
+socket.on("connect", () => {
+  const token = getToken();
+  (socket.auth as any).token = token;
+});
