@@ -91,12 +91,12 @@ export default function ProfilePage() {
               return post;
             }
 
-            const alreadyLiked =
-              post.likes?.some(
-                (like: any) =>
-                  like.userId ===
-                  currentUserId
-              );
+            // const alreadyLiked =
+            //   post.likes?.some(
+            //     (like: any) =>
+            //       like.userId ===
+            //       currentUserId
+            //   );
 
             return {
               ...post,

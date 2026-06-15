@@ -4,7 +4,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import FeedPage from "../pages/FeedPage";
 import MessagesPage from "../pages/MessagesPage";
-import CommunitiesPage from "../pages/comunitiesPage";
+import CommunitiesPage from "../pages/ComunitiesPage";
 import CommunityPage from "../pages/CommunityPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import ProfilePage from "../pages/ProfilePage";

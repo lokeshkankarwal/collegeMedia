@@ -19,13 +19,15 @@ import {
   leaveCommunity,
 } from "../services/community.service";
 
+import type { Community } from "../types/community";
+
 export default function
 CommunitiesPage() {
 
   const [
     communities,
     setCommunities,
-  ] = useState([]);
+  ] = useState<Community[]>([]);
 
   const [
     creating,

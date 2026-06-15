@@ -26,6 +26,9 @@ export default function OtherUserProfilePage() {
 
   const [posts, setPosts] = useState<Post[]>([]);
 
+  const currentUserId =
+    localStorage.getItem("userId") || "";
+
   const loadProfile = async () => {
     try {
       if (!userId) return;
@@ -131,6 +134,7 @@ export default function OtherUserProfilePage() {
             <PostCard
               key={post.id}
               post={post}
+              currentUserId={currentUserId}
               onLike={handleLike}
               onDelete={handleDelete}
             />

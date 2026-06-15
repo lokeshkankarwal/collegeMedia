@@ -27,6 +27,9 @@ export default function CommunityPage() {
   const [posts, setPosts] =
     useState<Post[]>([]);
 
+  const currentUserId =
+    localStorage.getItem("userId") || "";
+
   const loadData = async () => {
     try {
       if (!communityId) return;
@@ -171,6 +174,7 @@ export default function CommunityPage() {
                   <PostCard
                     key={post.id}
                     post={post}
+                    currentUserId={currentUserId}
                     onLike={
                       handleLike
                     }
