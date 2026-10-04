@@ -25,6 +25,20 @@ export const toggleLike = async (req, res) => {
                 postId,
             },
         });
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+            select: { authorId: true },
+        });
+        if (post && post.authorId !== userId) {
+            await prisma.notification.create({
+                data: {
+                    recipientId: post.authorId,
+                    senderId: userId,
+                    type: "LIKE",
+                    postId,
+                },
+            });
+        }
         res.json({
             liked: true,
         });

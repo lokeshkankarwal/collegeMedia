@@ -160,6 +160,19 @@ export const getUserProfile = async (req, res) => {
             });
             return;
         }
+        let isFollowing = false;
+        const currentUserId = req.userId;
+        if (currentUserId && currentUserId !== userId) {
+            const followRecord = await prisma.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: currentUserId,
+                        followingId: userId,
+                    },
+                },
+            });
+            isFollowing = Boolean(followRecord);
+        }
         res.json({
             id: user.id,
             name: user.name,
@@ -170,6 +183,7 @@ export const getUserProfile = async (req, res) => {
             followersCount: user._count.followers,
             followingCount: user._count.following,
             postsCount: user._count.posts,
+            isFollowing,
         });
     }
     catch (error) {
@@ -222,6 +236,146 @@ export const getUserPosts = async (req, res) => {
     }
     catch (error) {
         console.error(error);
+        res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+// ==========================================
+// 6. GET USER FOLLOWERS
+// ==========================================
+export const getUserFollowers = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const currentUserId = req.userId;
+        const followRecords = await prisma.follow.findMany({
+            where: {
+                followingId: userId,
+            },
+            include: {
+                follower: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        bio: true,
+                        branch: true,
+                        year: true,
+                        avatarUrl: true,
+                        _count: {
+                            select: {
+                                followers: true,
+                                following: true,
+                                posts: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        const followerUsers = followRecords.map((f) => f.follower);
+        const followerIds = followerUsers.map((u) => u.id);
+        let myFollowingSet = new Set();
+        if (currentUserId && followerIds.length > 0) {
+            const myFollows = await prisma.follow.findMany({
+                where: {
+                    followerId: currentUserId,
+                    followingId: { in: followerIds },
+                },
+                select: { followingId: true },
+            });
+            myFollowingSet = new Set(myFollows.map((f) => f.followingId));
+        }
+        const result = followerUsers.map((user) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            bio: user.bio,
+            branch: user.branch,
+            year: user.year,
+            avatarUrl: user.avatarUrl,
+            followersCount: user._count.followers,
+            followingCount: user._count.following,
+            postsCount: user._count.posts,
+            isFollowing: currentUserId ? myFollowingSet.has(user.id) : false,
+        }));
+        res.json(result);
+    }
+    catch (error) {
+        console.error("Get user followers error:", error);
+        res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+// ==========================================
+// 7. GET USER FOLLOWING
+// ==========================================
+export const getUserFollowing = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const currentUserId = req.userId;
+        const followRecords = await prisma.follow.findMany({
+            where: {
+                followerId: userId,
+            },
+            include: {
+                following: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        bio: true,
+                        branch: true,
+                        year: true,
+                        avatarUrl: true,
+                        _count: {
+                            select: {
+                                followers: true,
+                                following: true,
+                                posts: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        const followingUsers = followRecords.map((f) => f.following);
+        const followingIds = followingUsers.map((u) => u.id);
+        let myFollowingSet = new Set();
+        if (currentUserId && followingIds.length > 0) {
+            const myFollows = await prisma.follow.findMany({
+                where: {
+                    followerId: currentUserId,
+                    followingId: { in: followingIds },
+                },
+                select: { followingId: true },
+            });
+            myFollowingSet = new Set(myFollows.map((f) => f.followingId));
+        }
+        const result = followingUsers.map((user) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            bio: user.bio,
+            branch: user.branch,
+            year: user.year,
+            avatarUrl: user.avatarUrl,
+            followersCount: user._count.followers,
+            followingCount: user._count.following,
+            postsCount: user._count.posts,
+            isFollowing: currentUserId ? myFollowingSet.has(user.id) : false,
+        }));
+        res.json(result);
+    }
+    catch (error) {
+        console.error("Get user following error:", error);
         res.status(500).json({
             message: "Internal Server Error",
         });

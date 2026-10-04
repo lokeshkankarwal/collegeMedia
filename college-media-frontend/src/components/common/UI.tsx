@@ -276,3 +276,60 @@ export function Modal({
     </div>
   );
 }
+
+/* ─── ConfirmDialog ─────────────────────────────────────────── */
+export function ConfirmDialog({
+  isOpen,
+  title,
+  description,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  variant = "danger",
+  loading = false,
+  onConfirm,
+  onClose,
+}: {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: "danger" | "primary";
+  loading?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-float-in"
+      onClick={(e) => {
+        if (!loading && e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+        <p className="mt-2 text-sm text-slate-500 leading-relaxed">{description}</p>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            disabled={loading}
+            onClick={onClose}
+          >
+            {cancelText}
+          </Button>
+          <Button
+            variant={variant}
+            size="md"
+            loading={loading}
+            onClick={onConfirm}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

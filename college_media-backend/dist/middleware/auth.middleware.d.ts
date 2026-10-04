@@ -3,4 +3,5 @@ export interface AuthRequest extends Request {
     userId?: string;
 }
 export declare const authenticate: (req: AuthRequest, res: Response, next: NextFunction) => void;
+export declare const optionalAuthenticate: (req: AuthRequest, res: Response, next: NextFunction) => void;
 //# sourceMappingURL=auth.middleware.d.ts.map
