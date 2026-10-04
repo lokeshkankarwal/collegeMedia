@@ -17,8 +17,36 @@ export const createPost = async (req, res) => {
                 imageUrl,
                 authorId: req.userId,
             },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatarUrl: true,
+                        branch: true,
+                        year: true,
+                    },
+                },
+                likes: {
+                    select: {
+                        userId: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                    },
+                },
+            },
         });
-        res.status(201).json(post);
+        const formattedPost = {
+            ...post,
+            likes: post.likes || [],
+            likesCount: post._count?.likes ?? 0,
+            commentsCount: post._count?.comments ?? 0,
+        };
+        res.status(201).json(formattedPost);
     }
     catch (error) {
         console.error(error);
@@ -52,6 +80,11 @@ res) => {
                         year: true,
                     },
                 },
+                likes: {
+                    select: {
+                        userId: true,
+                    },
+                },
                 _count: {
                     select: {
                         likes: true,
@@ -63,8 +96,10 @@ res) => {
         const formattedPosts = posts.map((post) => ({
             id: post.id,
             content: post.content,
+            imageUrl: post.imageUrl,
             createdAt: post.createdAt,
             author: post.author,
+            likes: post.likes || [],
             likesCount: post._count.likes,
             commentsCount: post._count.comments,
         }));

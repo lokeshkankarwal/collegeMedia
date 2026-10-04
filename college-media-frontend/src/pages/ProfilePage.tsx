@@ -186,6 +186,9 @@ export default function ProfilePage() {
           name={user.name}
           bio={user.bio || ""}
           avatarUrl={user.avatarUrl || undefined}
+          branch={user.branch || undefined}
+          year={user.year || undefined}
+          userPosts={posts.map((p) => p.content).filter(Boolean)}
           onSave={handleProfileSave}
           onClose={() => setEditing(false)}
         />

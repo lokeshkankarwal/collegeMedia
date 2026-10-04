@@ -1,4 +1,5 @@
-import type { Request, Response } from "express";
-export declare const generatePost: (req: Request, res: Response) => Promise<void>;
-export declare const generateBio: (req: Request, res: Response) => Promise<void>;
+import type { Response } from "express";
+import type { AuthRequest } from "../middleware/auth.middleware.js";
+export declare const generatePost: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const generateBio: (req: AuthRequest, res: Response) => Promise<void>;
 //# sourceMappingURL=ai.controller.d.ts.map

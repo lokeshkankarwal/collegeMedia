@@ -395,7 +395,12 @@ export const createCommunityPost = async (
       },
     });
 
-    res.status(201).json(post);
+    res.status(201).json({
+      ...post,
+      likes: [],
+      likesCount: 0,
+      commentsCount: 0,
+    });
   } catch (error) {
     console.error("Create community post error:", error);
     res.status(500).json({

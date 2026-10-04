@@ -5,17 +5,30 @@ export const getFeed = async (req, res) => {
         const limit = Number(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const currentUserId = req.userId;
-        const feedPosts = await prisma.post.findMany({
+        const followingCount = await prisma.follow.count({
             where: {
-                communityId: null,
-                author: {
-                    followers: {
-                        some: {
-                            followerId: currentUserId,
+                followerId: currentUserId,
+            },
+        });
+        const whereClause = {
+            communityId: null,
+        };
+        if (followingCount > 0) {
+            whereClause.OR = [
+                { authorId: currentUserId },
+                {
+                    author: {
+                        followers: {
+                            some: {
+                                followerId: currentUserId,
+                            },
                         },
                     },
                 },
-            },
+            ];
+        }
+        const feedPosts = await prisma.post.findMany({
+            where: whereClause,
             skip,
             take: limit,
             orderBy: {

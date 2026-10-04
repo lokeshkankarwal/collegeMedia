@@ -23,20 +23,48 @@ export const getFeed = async (
     const currentUserId =
       req.userId!;
 
-    const feedPosts =
-      await prisma.post.findMany({
-        where: {
-          communityId: null,
+    const followingCount = await prisma.follow.count({
+      where: {
+        followerId: currentUserId,
+      },
+    });
 
+    const whereClause: {
+      communityId: null;
+      OR?: Array<
+        | { authorId: string }
+        | {
+            author: {
+              followers: {
+                some: {
+                  followerId: string;
+                };
+              };
+            };
+          }
+      >;
+    } = {
+      communityId: null,
+    };
+
+    if (followingCount > 0) {
+      whereClause.OR = [
+        { authorId: currentUserId },
+        {
           author: {
             followers: {
               some: {
-                followerId:
-                  currentUserId,
+                followerId: currentUserId,
               },
             },
           },
         },
+      ];
+    }
+
+    const feedPosts =
+      await prisma.post.findMany({
+        where: whereClause,
 
         skip,
         take: limit,

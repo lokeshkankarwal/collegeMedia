@@ -60,7 +60,18 @@ export default function CommunityPage() {
     if (!communityId) return;
     try {
       const newPost = await createCommunityPost(communityId, content);
-      setPosts((prev) => [newPost, ...prev]);
+      const safePost: Post = {
+        ...newPost,
+        author: newPost.author || {
+          id: currentUserId,
+          name: localStorage.getItem("userName") || "Me",
+          avatarUrl: localStorage.getItem("userAvatar") || undefined,
+        },
+        likes: newPost.likes || [],
+        likesCount: newPost.likesCount ?? 0,
+        commentsCount: newPost.commentsCount ?? 0,
+      };
+      setPosts((prev) => [safePost, ...prev]);
       toast.success("Posted to community!");
     } catch (err: unknown) {
       const msg =

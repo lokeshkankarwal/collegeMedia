@@ -10,6 +10,7 @@ export const generateBioAI = async (params: {
   name?: string;
   branch?: string;
   year?: number;
+  posts?: string[];
 }): Promise<string> => {
   const response = await api.post("/ai/generate-bio", params);
   return response.data?.generatedBio || "";

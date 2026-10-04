@@ -85,7 +85,18 @@ export default function FeedPage() {
       }
       const newPost = await createPost(content, imageUrl);
       if (newPost?.id) {
-        setPosts((prev) => [newPost, ...prev]);
+        const safePost: Post = {
+          ...newPost,
+          author: newPost.author || {
+            id: currentUserId,
+            name: localStorage.getItem("userName") || "Me",
+            avatarUrl: localStorage.getItem("userAvatar") || undefined,
+          },
+          likes: newPost.likes || [],
+          likesCount: newPost.likesCount ?? 0,
+          commentsCount: newPost.commentsCount ?? 0,
+        };
+        setPosts((prev) => [safePost, ...prev]);
       } else {
         await doLoadPosts();
       }

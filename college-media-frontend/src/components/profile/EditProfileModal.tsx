@@ -15,6 +15,9 @@ interface Props {
   name: string;
   bio?: string;
   avatarUrl?: string;
+  branch?: string;
+  year?: number;
+  userPosts?: string[];
   onSave: (updates: ProfileUpdateData) => Promise<void>;
   onClose?: () => void;
 }
@@ -23,6 +26,9 @@ export default function EditProfileModal({
   name: initialName,
   bio: initialBio = "",
   avatarUrl: initialAvatarUrl,
+  branch,
+  year,
+  userPosts,
   onSave,
   onClose,
 }: Props) {
@@ -153,11 +159,14 @@ export default function EditProfileModal({
     try {
       const generated = await generateBioAI({
         name,
+        branch,
+        year,
+        posts: userPosts,
         prompt: bio.trim() || undefined,
       });
       if (generated) {
         setBio(generated);
-        toast.success("Bio generated with Gemini AI!");
+        toast.success("Bio generated from your posts with Gemini AI!");
       }
     } catch {
       toast.error("Unable to generate bio with AI. Please try again.");

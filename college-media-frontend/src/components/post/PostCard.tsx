@@ -42,7 +42,9 @@ export default function PostCard({
 
   const isLiked =
     post.likes?.some((like) => like.userId === currentUserId) || false;
-  const isOwner = post.author.id === currentUserId;
+  const isOwner = Boolean(post.author?.id && post.author.id === currentUserId);
+  const authorName = post.author?.name || "User";
+  const authorAvatar = post.author?.avatarUrl;
 
   return (
     <div
@@ -56,9 +58,9 @@ export default function PostCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar name={post.author.name} src={post.author.avatarUrl} size="md" />
+          <Avatar name={authorName} src={authorAvatar} size="md" />
           <div className="min-w-0">
-            <p className="font-semibold text-slate-900 truncate">{post.author.name}</p>
+            <p className="font-semibold text-slate-900 truncate">{authorName}</p>
             <p className="text-xs text-slate-400">{timeAgo(post.createdAt)}</p>
           </div>
         </div>
