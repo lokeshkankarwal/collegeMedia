@@ -7,6 +7,9 @@ const SOCKET_URL = apiUrl.replace(/\/api\/?$/, "");
 
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
+  auth: {
+    token: getToken(),
+  },
   // Start with polling so a proxy can establish the Socket.IO session before
   // upgrading to WebSocket. This is reliable on Render and still upgrades when
   // WebSocket is available.
@@ -17,6 +20,6 @@ export const connectSocket = () => {
   // Read the current token immediately before the handshake. The previous
   // implementation captured a null/stale token when this module first loaded.
   const token = getToken();
-  (socket.auth as any).token = token;
+  socket.auth = { token };
   socket.connect();
 };
