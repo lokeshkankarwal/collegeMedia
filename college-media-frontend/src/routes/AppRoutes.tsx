@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -15,7 +15,7 @@ import AIAssistantPage from "../pages/AIAssistantPage";
 import SearchPage from "../pages/SearchPage";
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -109,6 +109,6 @@ export default function AppRoutes() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
