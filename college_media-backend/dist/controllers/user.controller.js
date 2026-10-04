@@ -63,8 +63,16 @@ export const updateMe = async (req, res) => {
             return;
         }
         const updateData = {};
-        if (name && typeof name === "string" && name.trim()) {
-            updateData.name = name.trim();
+        if (name !== undefined) {
+            if (typeof name === "string" && name.trim()) {
+                updateData.name = name.trim();
+            }
+            else {
+                res.status(400).json({
+                    message: "Name cannot be empty",
+                });
+                return;
+            }
         }
         if (bio !== undefined) {
             updateData.bio = bio ? String(bio).trim() : null;
@@ -91,9 +99,23 @@ export const updateMe = async (req, res) => {
                 branch: true,
                 year: true,
                 avatarUrl: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        followers: true,
+                        following: true,
+                        posts: true,
+                    },
+                },
             },
         });
-        res.status(200).json(updatedUser);
+        res.status(200).json({
+            ...updatedUser,
+            followersCount: updatedUser._count.followers,
+            followingCount: updatedUser._count.following,
+            postsCount: updatedUser._count.posts,
+            _count: undefined,
+        });
     }
     catch (error) {
         console.error(error);

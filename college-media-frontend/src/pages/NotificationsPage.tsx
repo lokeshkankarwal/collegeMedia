@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from "../services/notification.service";
 import { Avatar, Button, CardSkeleton, EmptyState, PageHeader } from "../components/common/UI";
-import { FiBell, FiCheck, FiCheckCircle } from "react-icons/fi";
+import { FiBell, FiCheck, FiCheckCircle, FiChevronRight } from "react-icons/fi";
 
 interface NotificationItem {
   id: string;
@@ -182,7 +182,7 @@ export default function NotificationsPage() {
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className={`flex items-center justify-between gap-4 rounded-3xl border p-4 transition cursor-pointer hover:shadow-md ${
+                className={`group flex items-center justify-between gap-4 rounded-3xl border p-4 transition cursor-pointer hover:shadow-md hover:border-indigo-300 ${
                   n.isRead
                     ? "border-slate-200 bg-white"
                     : "border-indigo-200 bg-indigo-50/70"
@@ -215,16 +215,19 @@ export default function NotificationsPage() {
                   </div>
                 </div>
 
-                {!n.isRead && (
-                  <button
-                    type="button"
-                    title="Mark as read"
-                    onClick={(e) => handleMarkOneRead(e, n.id)}
-                    className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition shrink-0"
-                  >
-                    <FiCheck className="text-sm" />
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {!n.isRead && (
+                    <button
+                      type="button"
+                      title="Mark as read"
+                      onClick={(e) => handleMarkOneRead(e, n.id)}
+                      className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition shrink-0"
+                    >
+                      <FiCheck className="text-sm" />
+                    </button>
+                  )}
+                  <FiChevronRight className="text-slate-300 text-sm group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+                </div>
               </div>
             );
           })}

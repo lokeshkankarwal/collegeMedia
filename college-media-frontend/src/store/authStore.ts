@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { disconnectSocket } from "../services/socket";
 
 interface AuthState {
   accessToken: string | null;
@@ -31,12 +32,12 @@ export const useAuthStore =
     },
 
     logout: () => {
-      localStorage.removeItem(
-        "accessToken"
-      );
+      disconnectSocket();
+      localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
       localStorage.removeItem("userName");
+      localStorage.removeItem("userAvatar");
 
       set({
         accessToken: null,

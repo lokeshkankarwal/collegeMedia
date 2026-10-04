@@ -13,6 +13,18 @@ interface Props {
   className?: string;
 }
 
+function formatChatTime(dateStr?: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffSec < 60) return "now";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+  if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export default function ConversationList({
   conversations,
   selectedId,
@@ -72,6 +84,7 @@ export default function ConversationList({
             const avatarSrc = conversation.isGroup ? undefined : otherUser?.avatarUrl;
             const avatarName = title || "User";
             const preview = conversation.messages?.[0]?.content || "No messages yet";
+            const latestTime = conversation.messages?.[0]?.createdAt || conversation.updatedAt;
 
             const isSelected = selectedId === conversation.id;
             const isHovered = hoveredId === conversation.id;
@@ -94,11 +107,18 @@ export default function ConversationList({
                 >
                   <Avatar name={avatarName} src={avatarSrc} size="md" />
                   <div className="min-w-0 flex-1 pr-6">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-semibold">{title}</p>
-                      {conversation.isGroup && (
-                        <span className="shrink-0 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
-                          Group
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate text-sm font-semibold">{title}</p>
+                        {conversation.isGroup && (
+                          <span className="shrink-0 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                            Group
+                          </span>
+                        )}
+                      </div>
+                      {latestTime && (
+                        <span className="shrink-0 text-[10px] text-slate-400 font-medium">
+                          {formatChatTime(latestTime)}
                         </span>
                       )}
                     </div>

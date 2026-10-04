@@ -27,10 +27,10 @@ async (
 export const updateProfile = async (
   data: {
     name?: string;
-    bio?: string;
-    avatarUrl?: string;
-    branch?: string;
-    year?: number;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    branch?: string | null;
+    year?: number | null;
   }
 ) => {
   const response = await api.put(

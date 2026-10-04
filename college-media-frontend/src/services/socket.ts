@@ -21,3 +21,9 @@ export const connectSocket = () => {
   socket.auth = { token };
   socket.connect();
 };
+
+export const disconnectSocket = () => {
+  if (socket.connected) {
+    socket.disconnect();
+  }
+};
