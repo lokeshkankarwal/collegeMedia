@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { generatePost, } from "../controllers/ai.controller.js";
+import { generatePost, generateBio, } from "../controllers/ai.controller.js";
 const router = Router();
 router.post("/generate-post", generatePost);
+router.post("/generate-bio", generateBio);
 export default router;
 //# sourceMappingURL=ai.routes.js.map

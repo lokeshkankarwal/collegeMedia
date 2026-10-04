@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -15,7 +15,6 @@ import FollowersPage from "../pages/FollowersPage";
 import FollowingPage from "../pages/FollowingPage";
 import ProtectedRoute from "./ProtectedRoute";
 import CreateGroupPage from "../pages/CreateGroupPage";
-import AIAssistantPage from "../pages/AIAssistantPage";
 import SearchPage from "../pages/SearchPage";
 
 export default function AppRoutes() {
@@ -84,14 +83,7 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/ai"
-          element={
-            <ProtectedRoute>
-              <AIAssistantPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/ai" element={<Navigate to="/" replace />} />
 
         <Route
           path="/search"

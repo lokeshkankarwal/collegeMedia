@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiBell,
   FiChevronRight,
-  FiCompass,
   FiHome,
   FiLogOut,
   FiMenu,
@@ -22,7 +21,6 @@ const desktopLinks = [
   { name: "Messages", path: "/messages", icon: FiMessageCircle },
   { name: "Communities", path: "/communities", icon: FiUsers },
   { name: "Notifications", path: "/notifications", icon: FiBell },
-  { name: "AI Assistant", path: "/ai", icon: FiCompass },
   { name: "Create Group", path: "/groups/create", icon: FiPlusSquare },
   { name: "Search", path: "/search", icon: FiSearch },
   { name: "Profile", path: "/profile", icon: FiUser },
@@ -65,8 +63,7 @@ export default function Sidebar() {
     showMoreMenu ||
     isActive("/profile") ||
     isActive("/search") ||
-    isActive("/groups/create") ||
-    isActive("/ai");
+    isActive("/groups/create");
 
   return (
     <>
@@ -252,20 +249,6 @@ export default function Sidebar() {
                 <FiChevronRight className="text-slate-400 text-sm" />
               </Link>
 
-              <Link
-                to="/ai"
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  isActive("/ai")
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <FiCompass className="text-lg text-indigo-500" />
-                  AI Assistant
-                </span>
-                <FiChevronRight className="text-slate-400 text-sm" />
-              </Link>
             </div>
 
             {/* Logout row */}

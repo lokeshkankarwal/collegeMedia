@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { FiCamera, FiTrash2 } from "react-icons/fi";
+import { FiCamera, FiTrash2, FiZap } from "react-icons/fi";
 import { Modal, Button, Avatar, Spinner } from "../common/UI";
 import { uploadFile } from "../../services/upload.service";
+import { generateBioAI } from "../../services/ai.service";
 
 export interface ProfileUpdateData {
   name?: string;
@@ -145,6 +146,26 @@ export default function EditProfileModal({
     }
   };
 
+  const [generatingBio, setGeneratingBio] = useState(false);
+
+  const handleGenerateBioAI = async () => {
+    setGeneratingBio(true);
+    try {
+      const generated = await generateBioAI({
+        name,
+        prompt: bio.trim() || undefined,
+      });
+      if (generated) {
+        setBio(generated);
+        toast.success("Bio generated with Gemini AI!");
+      }
+    } catch {
+      toast.error("Unable to generate bio with AI. Please try again.");
+    } finally {
+      setGeneratingBio(false);
+    }
+  };
+
   return (
     <Modal title="Edit Profile" onClose={onClose}>
       <div className="space-y-5">
@@ -229,13 +250,25 @@ export default function EditProfileModal({
 
         {/* Bio input */}
         <div>
-          <label htmlFor="edit-bio" className="mb-1 block text-sm font-medium text-slate-700">
-            Bio
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label htmlFor="edit-bio" className="block text-sm font-medium text-slate-700">
+              Bio
+            </label>
+            <button
+              type="button"
+              disabled={saving || generatingBio}
+              onClick={handleGenerateBioAI}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 transition"
+              title="Generate a student bio using Gemini AI"
+            >
+              <FiZap className="text-indigo-500" />
+              {generatingBio ? "Generating bio…" : "AI Suggest Bio"}
+            </button>
+          </div>
           <textarea
             id="edit-bio"
             value={bio}
-            disabled={saving}
+            disabled={saving || generatingBio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
             placeholder="Tell your campus about yourself…"

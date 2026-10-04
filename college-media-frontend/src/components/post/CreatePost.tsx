@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { Avatar } from "../common/UI";
-import { FiImage, FiSend, FiX } from "react-icons/fi";
+import { FiImage, FiSend, FiX, FiZap } from "react-icons/fi";
+import { generatePostAI } from "../../services/ai.service";
 
 interface Props {
   onSubmit: (content: string, image?: File) => Promise<void> | void;
@@ -11,6 +13,7 @@ export default function CreatePost({ onSubmit }: Props) {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generatingPost, setGeneratingPost] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const userName = localStorage.getItem("userName") || "Me";
@@ -45,6 +48,21 @@ export default function CreatePost({ onSubmit }: Props) {
     }
   };
 
+  const handleAIAssist = async () => {
+    setGeneratingPost(true);
+    try {
+      const generated = await generatePostAI(content.trim() || undefined);
+      if (generated) {
+        setContent(generated);
+        toast.success("Post suggestion generated with Gemini AI!");
+      }
+    } catch {
+      toast.error("Unable to generate post with AI. Please try again.");
+    } finally {
+      setGeneratingPost(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -59,11 +77,12 @@ export default function CreatePost({ onSubmit }: Props) {
         <div className="flex-1 min-w-0">
           <textarea
             value={content}
+            disabled={generatingPost}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="What's on your mind?"
             rows={3}
-            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition disabled:opacity-60"
           />
 
           {preview && (
@@ -85,15 +104,29 @@ export default function CreatePost({ onSubmit }: Props) {
           )}
 
           <div className="mt-3 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              aria-label="Attach image"
-              onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
-            >
-              <FiImage className="text-base" />
-              <span className="hidden sm:inline">Photo</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Attach image"
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
+              >
+                <FiImage className="text-base" />
+                <span className="hidden sm:inline">Photo</span>
+              </button>
+
+              <button
+                type="button"
+                aria-label="AI Suggest post"
+                disabled={loading || generatingPost}
+                onClick={handleAIAssist}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition disabled:opacity-50"
+                title="Generate or refine post with Gemini AI"
+              >
+                <FiZap className="text-base text-indigo-500" />
+                <span className="text-xs font-semibold">{generatingPost ? "Generating…" : "AI Suggest"}</span>
+              </button>
+            </div>
 
             <input
               ref={fileRef}
