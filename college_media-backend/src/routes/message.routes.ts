@@ -4,6 +4,9 @@ from "express";
 import {
   getConversation,
 } from "../controllers/message.controller.js";
+import {
+  deleteMessage,
+} from "../controllers/conversation.controller.js";
 
 import {
   authenticate,
@@ -15,6 +18,12 @@ router.get(
   "/:userId",
   authenticate,
   getConversation
+);
+
+router.delete(
+  "/:messageId",
+  authenticate,
+  deleteMessage
 );
 
 export default router;

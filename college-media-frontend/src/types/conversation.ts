@@ -18,6 +18,10 @@ export interface Conversation {
   creatorId?: string;
   participants: ConversationParticipantInfo[];
   messages?: {
-    content: string;
+    id?: string;
+    content?: string;
+    createdAt?: string;
   }[];
+  createdAt?: string;
+  updatedAt?: string;
 }

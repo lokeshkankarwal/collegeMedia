@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma.js";
+import { getIO } from "../socket/socket.js";
 export const createConversation = async (req, res) => {
     try {
         const currentUserId = req.userId;
@@ -422,6 +423,307 @@ export const updateGroupAdmin = async (req, res) => {
     }
     catch (error) {
         console.error("Update group admin error:", error);
+        res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+export const deleteMessage = async (req, res) => {
+    try {
+        const currentUserId = req.userId;
+        const messageId = req.params.messageId;
+        const conversationIdParam = req.params.conversationId;
+        const message = await prisma.message.findUnique({
+            where: {
+                id: messageId,
+            },
+            include: {
+                conversation: {
+                    include: {
+                        participants: true,
+                    },
+                },
+            },
+        });
+        if (!message) {
+            res.status(404).json({
+                message: "Message not found",
+            });
+            return;
+        }
+        if (conversationIdParam && message.conversationId !== conversationIdParam) {
+            res.status(400).json({
+                message: "Message does not belong to specified conversation",
+            });
+            return;
+        }
+        // Authorization: User must be message sender or group admin/creator
+        const isSender = message.senderId === currentUserId;
+        const isGroupAdmin = message.conversation.isGroup &&
+            (message.conversation.creatorId === currentUserId ||
+                message.conversation.participants.some((p) => p.userId === currentUserId && p.isAdmin));
+        if (!isSender && !isGroupAdmin) {
+            res.status(403).json({
+                message: "Forbidden: You are not authorized to delete this message",
+            });
+            return;
+        }
+        // Delete message from database
+        await prisma.message.delete({
+            where: {
+                id: messageId,
+            },
+        });
+        // Find the latest message remaining in this conversation
+        const lastMessage = await prisma.message.findFirst({
+            where: {
+                conversationId: message.conversationId,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            include: {
+                sender: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatarUrl: true,
+                    },
+                },
+            },
+        });
+        // Update conversation updatedAt
+        await prisma.conversation.update({
+            where: {
+                id: message.conversationId,
+            },
+            data: {
+                updatedAt: lastMessage ? lastMessage.createdAt : new Date(),
+            },
+        });
+        // Emit socket event to notify conversation room and participants
+        try {
+            const io = getIO();
+            const payload = {
+                messageId,
+                conversationId: message.conversationId,
+                lastMessage: lastMessage || null,
+            };
+            io.to(message.conversationId).emit("messageDeleted", payload);
+            for (const p of message.conversation.participants) {
+                io.to(p.userId).emit("messageDeleted", payload);
+            }
+        }
+        catch {
+            // socket might not be initialized in test environment
+        }
+        res.json({
+            message: "Message deleted successfully",
+            messageId,
+            conversationId: message.conversationId,
+            lastMessage: lastMessage || null,
+        });
+    }
+    catch (error) {
+        console.error("Delete message error:", error);
+        res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+export const addGroupMembers = async (req, res) => {
+    try {
+        const currentUserId = req.userId;
+        const conversationId = req.params.conversationId;
+        const { userIds } = req.body;
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            res.status(400).json({
+                message: "userIds array is required and must contain at least one user ID",
+            });
+            return;
+        }
+        // 1. Verify conversation exists and is a group
+        const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: { participants: true },
+        });
+        if (!conversation || !conversation.isGroup) {
+            res.status(404).json({
+                message: "Group conversation not found",
+            });
+            return;
+        }
+        // 2. Authorization check: requester must be group admin or creator
+        const requester = conversation.participants.find((p) => p.userId === currentUserId && !p.isDeleted);
+        const isRequesterAdmin = requester?.isAdmin || conversation.creatorId === currentUserId;
+        if (!requester || !isRequesterAdmin) {
+            res.status(403).json({
+                message: "Forbidden: Only group administrators can add members",
+            });
+            return;
+        }
+        // 3. Verify users exist
+        const uniqueUserIds = Array.from(new Set(userIds.filter((id) => Boolean(id) && typeof id === "string")));
+        const existingUsers = await prisma.user.findMany({
+            where: {
+                id: { in: uniqueUserIds },
+            },
+            select: { id: true, name: true, avatarUrl: true },
+        });
+        if (existingUsers.length === 0) {
+            res.status(400).json({
+                message: "No valid users found to add",
+            });
+            return;
+        }
+        // 4. Upsert/add participants
+        for (const user of existingUsers) {
+            const existingParticipant = conversation.participants.find((p) => p.userId === user.id);
+            if (existingParticipant) {
+                if (existingParticipant.isDeleted) {
+                    await prisma.conversationParticipant.update({
+                        where: {
+                            conversationId_userId: {
+                                conversationId,
+                                userId: user.id,
+                            },
+                        },
+                        data: {
+                            isDeleted: false,
+                        },
+                    });
+                }
+            }
+            else {
+                await prisma.conversationParticipant.create({
+                    data: {
+                        conversationId,
+                        userId: user.id,
+                        isAdmin: false,
+                        isDeleted: false,
+                    },
+                });
+            }
+        }
+        // Fetch refreshed conversation
+        const updatedConversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: {
+                participants: {
+                    where: { isDeleted: false },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                avatarUrl: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        // Notify via socket
+        try {
+            const io = getIO();
+            io.to(conversationId).emit("groupMembersUpdated", {
+                conversationId,
+                addedUserIds: existingUsers.map((u) => u.id),
+            });
+            for (const user of existingUsers) {
+                io.to(user.id).emit("groupInvite", updatedConversation);
+            }
+        }
+        catch {
+            // socket safe
+        }
+        res.json(updatedConversation);
+    }
+    catch (error) {
+        console.error("Add group members error:", error);
+        res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+export const removeGroupMember = async (req, res) => {
+    try {
+        const currentUserId = req.userId;
+        const conversationId = req.params.conversationId;
+        const targetUserId = req.params.targetUserId;
+        // 1. Verify conversation exists and is a group
+        const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId },
+            include: { participants: true },
+        });
+        if (!conversation || !conversation.isGroup) {
+            res.status(404).json({
+                message: "Group conversation not found",
+            });
+            return;
+        }
+        // 2. Authorization check: requester must be group admin or creator
+        const requester = conversation.participants.find((p) => p.userId === currentUserId && !p.isDeleted);
+        const isRequesterAdmin = requester?.isAdmin || conversation.creatorId === currentUserId;
+        if (!requester || !isRequesterAdmin) {
+            res.status(403).json({
+                message: "Forbidden: Only group administrators can remove members",
+            });
+            return;
+        }
+        // 3. Creator protection: cannot remove the group creator
+        if (targetUserId === conversation.creatorId) {
+            res.status(400).json({
+                message: "Cannot remove the group creator from the group",
+            });
+            return;
+        }
+        // 4. Target user must be an active participant
+        const targetParticipant = conversation.participants.find((p) => p.userId === targetUserId && !p.isDeleted);
+        if (!targetParticipant) {
+            res.status(404).json({
+                message: "Member not found in this group",
+            });
+            return;
+        }
+        // 5. Admin protection: normal admin cannot remove another admin unless they are creator
+        if (targetParticipant.isAdmin && conversation.creatorId !== currentUserId) {
+            res.status(403).json({
+                message: "Only the group creator can remove other administrators",
+            });
+            return;
+        }
+        // 6. Delete the participant
+        await prisma.conversationParticipant.delete({
+            where: {
+                conversationId_userId: {
+                    conversationId,
+                    userId: targetUserId,
+                },
+            },
+        });
+        // Notify via socket
+        try {
+            const io = getIO();
+            io.to(conversationId).emit("groupMemberRemoved", {
+                conversationId,
+                removedUserId: targetUserId,
+            });
+            io.to(targetUserId).emit("removedFromGroup", {
+                conversationId,
+            });
+        }
+        catch {
+            // socket safe
+        }
+        res.json({
+            message: "Member removed from group successfully",
+            removedUserId: targetUserId,
+            conversationId,
+        });
+    }
+    catch (error) {
+        console.error("Remove group member error:", error);
         res.status(500).json({
             message: "Internal Server Error",
         });

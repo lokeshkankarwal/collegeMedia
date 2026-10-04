@@ -322,6 +322,14 @@ export const deleteCommunity = async (
       return;
     }
 
+    // Delete all community posts and their relations
+    await prisma.post.deleteMany({
+      where: {
+        communityId,
+      },
+    });
+
+    // Delete community (cascades to memberships)
     await prisma.community.delete({
       where: {
         id: communityId,
