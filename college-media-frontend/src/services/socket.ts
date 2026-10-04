@@ -10,10 +10,11 @@ export const socket = io(SOCKET_URL, {
   auth: {
     token: getToken(),
   },
-  // Start with polling so a proxy can establish the Socket.IO session before
-  // upgrading to WebSocket. This is reliable on Render and still upgrades when
-  // WebSocket is available.
-  transports: ["polling", "websocket"],
+  // Render's proxy is timing out during the WebSocket upgrade. Socket.IO's
+  // polling transport keeps the same real-time event API and works reliably
+  // through that proxy without producing a failed WebSocket handshake.
+  transports: ["polling"],
+  upgrade: false,
 });
 
 export const connectSocket = () => {
