@@ -1,9 +1,27 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
-import { FiArrowLeft, FiInfo, FiPaperclip, FiSend, FiShield, FiUserCheck, FiUserX } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiInfo,
+  FiPaperclip,
+  FiSearch,
+  FiSend,
+  FiShield,
+  FiUserCheck,
+  FiUserMinus,
+  FiUserPlus,
+  FiUserX,
+  FiX,
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 import MessageBubble from "./MessageBubble";
-import { Avatar, Button, ConfirmDialog, Modal } from "../common/UI";
-import { updateGroupAdmin } from "../../services/conversation.service";
+import { Avatar, Button, ConfirmDialog, Modal, UserCardSkeleton } from "../common/UI";
+import {
+  updateGroupAdmin,
+  addGroupMembers,
+  removeGroupMember,
+} from "../../services/conversation.service";
+import { searchUsers } from "../../services/search.service";
 import type { Message } from "../../types/message";
 import type { Conversation, ConversationParticipantInfo } from "../../types/conversation";
 
@@ -16,6 +34,7 @@ interface Props {
   onTyping: () => void;
   onFileUpload: (file: File) => void;
   onConversationUpdated?: () => void;
+  onDeleteMessage?: (message: Message) => void;
   isTyping: boolean;
   onBack?: () => void;
 }
@@ -29,16 +48,38 @@ export default function ChatWindow({
   onTyping,
   onFileUpload,
   onConversationUpdated,
+  onDeleteMessage,
   isTyping,
   onBack,
 }: Props) {
   const [content, setContent] = useState("");
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [deletingMessage, setDeletingMessage] = useState<Message | null>(null);
+
+  // Group member role change state
   const [confirmAdminChange, setConfirmAdminChange] = useState<{
     target: ConversationParticipantInfo;
     makeAdmin: boolean;
   } | null>(null);
   const [adminActionLoading, setAdminActionLoading] = useState(false);
+
+  // Group remove member state
+  const [confirmRemoveMember, setConfirmRemoveMember] =
+    useState<ConversationParticipantInfo | null>(null);
+  const [removeMemberLoading, setRemoveMemberLoading] = useState(false);
+
+  // Group add member state
+  const [showAddMembers, setShowAddMembers] = useState(false);
+  const [searchUserQuery, setSearchUserQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<
+    Array<{ id: string; name: string; avatarUrl?: string }>
+  >([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedToAdd, setSelectedToAdd] = useState<
+    Array<{ id: string; name: string; avatarUrl?: string }>
+  >([]);
+  const [addMembersLoading, setAddMembersLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +148,96 @@ export default function ChatWindow({
     }
   };
 
+  // Debounced search for adding users to group
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!searchUserQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchUsers(searchUserQuery.trim());
+        const existingParticipantIds = new Set(
+          (conversation?.participants || [])
+            .filter((p) => !p.isDeleted)
+            .map((p) => p.userId || p.user?.id)
+        );
+        const filtered = (results || []).filter(
+          (u: { id: string; name: string }) => !existingParticipantIds.has(u.id)
+        );
+        setSearchResults(filtered);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchUserQuery, conversation]);
+
+  const toggleSelectUserToAdd = (user: { id: string; name: string; avatarUrl?: string }) => {
+    setSelectedToAdd((prev) => {
+      const exists = prev.some((u) => u.id === user.id);
+      return exists ? prev.filter((u) => u.id !== user.id) : [...prev, user];
+    });
+  };
+
+  const handleAddMembers = async () => {
+    if (!conversation || selectedToAdd.length === 0) return;
+    setAddMembersLoading(true);
+    try {
+      await addGroupMembers(
+        conversation.id,
+        selectedToAdd.map((u) => u.id)
+      );
+      toast.success(`Added ${selectedToAdd.length} member(s) to group`);
+      setSelectedToAdd([]);
+      setSearchUserQuery("");
+      setShowAddMembers(false);
+      if (onConversationUpdated) {
+        onConversationUpdated();
+      }
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Failed to add members";
+      toast.error(msg || "Action failed");
+    } finally {
+      setAddMembersLoading(false);
+    }
+  };
+
+  const handleRemoveMember = async () => {
+    if (!conversation || !confirmRemoveMember) return;
+    const targetUserId = confirmRemoveMember.userId || confirmRemoveMember.user?.id;
+    if (!targetUserId) return;
+
+    setRemoveMemberLoading(true);
+    try {
+      await removeGroupMember(conversation.id, targetUserId);
+      toast.success(`Removed ${confirmRemoveMember.user?.name || "member"} from group`);
+      setConfirmRemoveMember(null);
+      if (onConversationUpdated) {
+        onConversationUpdated();
+      }
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Failed to remove member";
+      toast.error(msg || "Action failed");
+    } finally {
+      setRemoveMemberLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-1 min-w-0 flex-col bg-white">
       {/* Header */}
@@ -130,7 +261,7 @@ export default function ChatWindow({
               </p>
               {isGroup && (
                 <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
-                  {conversation?.participants?.length || 0} members
+                  {conversation?.participants?.filter((p) => !p.isDeleted)?.length || 0} members
                 </span>
               )}
             </div>
@@ -166,6 +297,8 @@ export default function ChatWindow({
             key={message.id}
             message={message}
             currentUserId={currentUserId}
+            canDelete={isCurrentUserAdmin || message.senderId === currentUserId}
+            onDelete={(m) => setDeletingMessage(m)}
           />
         ))}
         {isTyping && !messages.length && (
@@ -229,10 +362,15 @@ export default function ChatWindow({
       {showGroupModal && conversation && (
         <Modal
           title={conversation.name || "Group Details"}
-          onClose={() => setShowGroupModal(false)}
+          onClose={() => {
+            setShowGroupModal(false);
+            setShowAddMembers(false);
+            setSelectedToAdd([]);
+            setSearchUserQuery("");
+          }}
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
                 <p className="text-xs uppercase tracking-wider font-bold text-slate-400">
                   Group Members
@@ -240,56 +378,198 @@ export default function ChatWindow({
                 <p className="text-xs text-slate-500">
                   {isCurrentUserAdmin
                     ? "You are an admin of this group."
-                    : "Only group admins can manage roles."}
+                    : "Only group admins can manage members and roles."}
                 </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                {conversation.participants.length} total
-              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                  {conversation.participants?.filter((p) => !p.isDeleted)?.length || 0} total
+                </span>
+                {isCurrentUserAdmin && !showAddMembers && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowAddMembers(true)}
+                    className="text-xs"
+                  >
+                    <FiUserPlus /> Add Members
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-              {conversation.participants.map((p) => {
-                const memberUser = p.user;
-                const memberId = p.userId || memberUser?.id;
-                const isCreator = conversation.creatorId === memberId;
-                const isAdmin = Boolean(p.isAdmin) || isCreator;
-                const isSelf = memberId === currentUserId;
-
-                return (
-                  <div
-                    key={memberId}
-                    className="flex items-center justify-between gap-3 rounded-2xl p-2.5 hover:bg-slate-50 transition"
+            {/* Add Members Panel */}
+            {showAddMembers && (
+              <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                    Add Members to Group
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMembers(false);
+                      setSearchUserQuery("");
+                      setSelectedToAdd([]);
+                    }}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <Avatar name={memberUser?.name || "Member"} src={memberUser?.avatarUrl} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-semibold text-slate-900 truncate">
-                            {memberUser?.name}
-                          </p>
-                          {isSelf && (
-                            <span className="text-[10px] text-slate-400 font-medium">(You)</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400 truncate">
-                          {isAdmin ? (
-                            <span className="inline-flex items-center gap-1 font-semibold text-indigo-600">
-                              <FiShield className="text-[10px]" />
-                              {isCreator ? "Creator & Admin" : "Admin"}
-                            </span>
-                          ) : (
-                            "Member"
-                          )}
-                        </p>
-                      </div>
-                    </div>
+                    Cancel
+                  </button>
+                </div>
 
-                    {/* Admin actions (only visible to admins, not for self, creator protected) */}
-                    {isCurrentUserAdmin && !isSelf && (
-                      <div className="shrink-0">
-                        {isAdmin ? (
-                          !isCreator && (
+                {/* Selected chips preview */}
+                {selectedToAdd.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {selectedToAdd.map((u) => (
+                      <span
+                        key={u.id}
+                        className="inline-flex items-center gap-1 rounded-full bg-indigo-600 text-white px-2.5 py-1 text-xs font-medium"
+                      >
+                        {u.name}
+                        <button
+                          type="button"
+                          onClick={() => toggleSelectUserToAdd(u)}
+                          className="hover:text-indigo-200"
+                        >
+                          <FiX className="text-xs" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Search input */}
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                  <input
+                    type="text"
+                    value={searchUserQuery}
+                    onChange={(e) => setSearchUserQuery(e.target.value)}
+                    placeholder="Search users to add..."
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                {/* Search Results */}
+                {searchLoading ? (
+                  <div className="space-y-1.5 py-1">
+                    <UserCardSkeleton />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl bg-white border border-slate-100 p-1.5">
+                    {searchResults.map((user) => {
+                      const isSelected = selectedToAdd.some((u) => u.id === user.id);
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => toggleSelectUserToAdd(user)}
+                          className={`flex w-full items-center justify-between gap-2.5 rounded-lg p-2 text-left transition ${
+                            isSelected ? "bg-indigo-50 text-indigo-900" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Avatar name={user.name} src={user.avatarUrl} size="xs" />
+                            <p className="text-xs font-semibold truncate">{user.name}</p>
+                          </div>
+                          <div
+                            className={`grid h-5 w-5 place-items-center rounded-md border text-xs ${
+                              isSelected
+                                ? "bg-indigo-600 border-indigo-600 text-white"
+                                : "border-slate-300 bg-white text-transparent"
+                            }`}
+                          >
+                            <FiCheck className="text-[10px]" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : searchUserQuery.trim() ? (
+                  <p className="text-center text-xs text-slate-400 py-2">
+                    No matching users found
+                  </p>
+                ) : null}
+
+                {/* Action button */}
+                <div className="flex justify-end pt-1">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={selectedToAdd.length === 0}
+                    loading={addMembersLoading}
+                    onClick={handleAddMembers}
+                    className="text-xs"
+                  >
+                    <FiUserPlus /> Add Selected ({selectedToAdd.length})
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Member List */}
+            <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+              {(conversation.participants || [])
+                .filter((p) => !p.isDeleted)
+                .map((p) => {
+                  const memberUser = p.user;
+                  const memberId = p.userId || memberUser?.id;
+                  const isCreator = conversation.creatorId === memberId;
+                  const isAdmin = Boolean(p.isAdmin) || isCreator;
+                  const isSelf = memberId === currentUserId;
+
+                  return (
+                    <div
+                      key={memberId}
+                      className="flex items-center justify-between gap-3 rounded-2xl p-2.5 hover:bg-slate-50 transition"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar name={memberUser?.name || "Member"} src={memberUser?.avatarUrl} size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-slate-900 truncate">
+                              {memberUser?.name}
+                            </p>
+                            {isSelf && (
+                              <span className="text-[10px] text-slate-400 font-medium">(You)</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400 truncate">
+                            {isAdmin ? (
+                              <span className="inline-flex items-center gap-1 font-semibold text-indigo-600">
+                                <FiShield className="text-[10px]" />
+                                {isCreator ? "Creator & Admin" : "Admin"}
+                              </span>
+                            ) : (
+                              "Member"
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Admin controls: visible to admins, not for self, creator protected */}
+                      {isCurrentUserAdmin && !isSelf && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isAdmin ? (
+                            !isCreator && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="text-xs"
+                                onClick={() =>
+                                  setConfirmAdminChange({
+                                    target: p,
+                                    makeAdmin: false,
+                                  })
+                                }
+                              >
+                                <FiUserX className="text-rose-500" />
+                                <span className="hidden sm:inline">Dismiss Admin</span>
+                              </Button>
+                            )
+                          ) : (
                             <Button
                               variant="secondary"
                               size="sm"
@@ -297,39 +577,42 @@ export default function ChatWindow({
                               onClick={() =>
                                 setConfirmAdminChange({
                                   target: p,
-                                  makeAdmin: false,
+                                  makeAdmin: true,
                                 })
                               }
                             >
-                              <FiUserX className="text-rose-500" />
-                              Dismiss Admin
+                              <FiUserCheck className="text-indigo-600" />
+                              <span className="hidden sm:inline">Make Admin</span>
                             </Button>
-                          )
-                        ) : (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="text-xs"
-                            onClick={() =>
-                              setConfirmAdminChange({
-                                target: p,
-                                makeAdmin: true,
-                              })
-                            }
-                          >
-                            <FiUserCheck className="text-indigo-600" />
-                            Make Admin
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                          )}
+
+                          {/* Remove Member button (Creator cannot be removed; admins can only remove non-admins or creator can remove any admin) */}
+                          {!isCreator && (!isAdmin || conversation.creatorId === currentUserId) && (
+                            <button
+                              type="button"
+                              title={`Remove ${memberUser?.name || "member"} from group`}
+                              onClick={() => setConfirmRemoveMember(p)}
+                              className="grid h-8 w-8 place-items-center rounded-xl border border-slate-200 text-slate-400 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition"
+                            >
+                              <FiUserMinus className="text-xs" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="pt-2 flex justify-end">
-              <Button variant="secondary" size="md" onClick={() => setShowGroupModal(false)}>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  setShowGroupModal(false);
+                  setShowAddMembers(false);
+                }}
+              >
                 Close
               </Button>
             </div>
@@ -348,7 +631,7 @@ export default function ChatWindow({
           }
           description={
             confirmAdminChange.makeAdmin
-              ? "As an admin, this member will be able to manage group settings and other administrators."
+              ? "As an admin, this member will be able to manage group settings, members, and administrators."
               : "This member will no longer have administrator permissions in this group."
           }
           confirmText={confirmAdminChange.makeAdmin ? "Make Admin" : "Remove Admin"}
@@ -358,6 +641,38 @@ export default function ChatWindow({
           onClose={() => setConfirmAdminChange(null)}
         />
       )}
+
+      {/* Confirm Remove Member */}
+      {confirmRemoveMember && (
+        <ConfirmDialog
+          isOpen={true}
+          title={`Remove ${confirmRemoveMember.user?.name || "Member"}?`}
+          description={`Are you sure you want to remove ${confirmRemoveMember.user?.name || "this user"} from "${conversation?.name || "this group"}"? They will lose access to all messages.`}
+          confirmText="Remove Member"
+          cancelText="Cancel"
+          variant="danger"
+          loading={removeMemberLoading}
+          onConfirm={handleRemoveMember}
+          onClose={() => setConfirmRemoveMember(null)}
+        />
+      )}
+
+      {/* Confirm Message Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingMessage)}
+        title="Delete this message?"
+        description="Are you sure you want to delete this message? It will be permanently removed for everyone."
+        confirmText="Delete Message"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingMessage && onDeleteMessage) {
+            onDeleteMessage(deletingMessage);
+          }
+          setDeletingMessage(null);
+        }}
+        onClose={() => setDeletingMessage(null)}
+      />
     </div>
   );
 }

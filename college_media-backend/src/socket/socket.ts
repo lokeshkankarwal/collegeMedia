@@ -97,13 +97,111 @@ export const initSocket = (server: any) => {
           },
         });
 
-        console.log("ROOM:", conversationId);
+        // Update conversation updatedAt timestamp
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() },
+        });
 
-        console.log("MESSAGE:", content);
-
+        // Broadcast to conversation room
         io.to(conversationId).emit("receiveMessage", message);
+
+        // Also broadcast to participants' personal user rooms
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+          include: {
+            participants: {
+              where: { isDeleted: false },
+            },
+          },
+        });
+
+        if (conversation) {
+          for (const participant of conversation.participants) {
+            io.to(participant.userId).emit("receiveMessage", message);
+          }
+        }
       } catch (error) {
         console.error("sendMessage error:", error);
+      }
+    });
+
+    /*
+    =========================================
+    DELETE MESSAGE
+    =========================================
+    */
+    socket.on("deleteMessage", async (data) => {
+      try {
+        const { messageId, conversationId } = data;
+
+        const message = await prisma.message.findUnique({
+          where: { id: messageId },
+          include: {
+            conversation: {
+              include: {
+                participants: true,
+              },
+            },
+          },
+        });
+
+        if (!message) return;
+
+        // Authorization check: sender or group admin/creator
+        const isSender = message.senderId === userId;
+        const isGroupAdmin =
+          message.conversation.isGroup &&
+          (message.conversation.creatorId === userId ||
+            message.conversation.participants.some(
+              (p) => p.userId === userId && p.isAdmin
+            ));
+
+        if (!isSender && !isGroupAdmin) return;
+
+        // Delete from database
+        await prisma.message.delete({
+          where: { id: messageId },
+        });
+
+        // Find remaining last message in conversation
+        const lastMessage = await prisma.message.findFirst({
+          where: { conversationId: message.conversationId },
+          orderBy: { createdAt: "desc" },
+          include: {
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        });
+
+        // Update conversation updatedAt
+        await prisma.conversation.update({
+          where: { id: message.conversationId },
+          data: {
+            updatedAt: lastMessage ? lastMessage.createdAt : new Date(),
+          },
+        });
+
+        const payload = {
+          messageId,
+          conversationId: message.conversationId,
+          lastMessage: lastMessage || null,
+        };
+
+        // Broadcast deletion to conversation room
+        io.to(message.conversationId).emit("messageDeleted", payload);
+
+        // Broadcast deletion to all participants
+        for (const p of message.conversation.participants) {
+          io.to(p.userId).emit("messageDeleted", payload);
+        }
+      } catch (error) {
+        console.error("socket deleteMessage error:", error);
       }
     });
 

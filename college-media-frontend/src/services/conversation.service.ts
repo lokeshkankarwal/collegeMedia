@@ -76,3 +76,18 @@ export const updateGroupAdmin = async (
   );
   return response.data;
 };
+
+export const deleteMessage = async (conversationId: string, messageId: string) => {
+  const response = await api.delete(`/conversations/${conversationId}/messages/${messageId}`);
+  return response.data;
+};
+
+export const addGroupMembers = async (conversationId: string, userIds: string[]) => {
+  const response = await api.post(`/conversations/${conversationId}/members`, { userIds });
+  return response.data;
+};
+
+export const removeGroupMember = async (conversationId: string, targetUserId: string) => {
+  const response = await api.delete(`/conversations/${conversationId}/members/${targetUserId}`);
+  return response.data;
+};

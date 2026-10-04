@@ -4,7 +4,12 @@ import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import ConversationList from "../components/chat/ConversationList";
 import ChatWindow from "../components/chat/ChatWindow";
-import { getConversations, getMessages, deleteConversation } from "../services/conversation.service";
+import {
+  getConversations,
+  getMessages,
+  deleteConversation,
+  deleteMessage as deleteMessageService,
+} from "../services/conversation.service";
 import { uploadFile } from "../services/upload.service";
 import { connectSocket, socket } from "../services/socket";
 import { ConfirmDialog, EmptyState } from "../components/common/UI";
@@ -30,32 +35,6 @@ export default function MessagesPage() {
     (c) => c.id === selectedConversation
   );
 
-  // Connect socket once on mount, don't disconnect on unmount
-  useEffect(() => {
-    connectSocket();
-  }, []);
-
-  // Socket event listeners scoped to the selected conversation
-  useEffect(() => {
-    const handleMessage = (message: Message) => {
-      if (message.conversationId !== selectedConversation) return;
-      setMessages((prev) => [...prev, message]);
-    };
-
-    const handleTypingEvent = () => {
-      setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 1500);
-    };
-
-    socket.on("receiveMessage", handleMessage);
-    socket.on("userTyping", handleTypingEvent);
-
-    return () => {
-      socket.off("receiveMessage", handleMessage);
-      socket.off("userTyping", handleTypingEvent);
-    };
-  }, [selectedConversation]);
-
   const loadConversations = useCallback(async () => {
     setConvLoading(true);
     try {
@@ -67,6 +46,109 @@ export default function MessagesPage() {
       setConvLoading(false);
     }
   }, []);
+
+  // Connect socket once on mount, don't disconnect on unmount
+  useEffect(() => {
+    connectSocket();
+  }, []);
+
+  // Socket event listeners scoped to the selected conversation and conversation list
+  useEffect(() => {
+    const handleMessage = (message: Message) => {
+      // 1. If viewing this conversation, append new message avoiding duplicates
+      if (message.conversationId === selectedConversation) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, message];
+        });
+      }
+
+      // 2. Update conversation list preview
+      setConversations((prev) => {
+        const exists = prev.some((c) => c.id === message.conversationId);
+        if (!exists) {
+          loadConversations();
+          return prev;
+        }
+        return prev.map((c) => {
+          if (c.id === message.conversationId) {
+            return {
+              ...c,
+              messages: [message],
+              updatedAt: message.createdAt,
+            };
+          }
+          return c;
+        });
+      });
+    };
+
+    const handleMessageDeleted = ({
+      messageId,
+      conversationId,
+      lastMessage,
+    }: {
+      messageId: string;
+      conversationId: string;
+      lastMessage?: Message | null;
+    }) => {
+      // 1. Remove deleted message if currently viewed
+      if (conversationId === selectedConversation) {
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      }
+
+      // 2. Update conversation list preview with remaining last message
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c.id === conversationId) {
+            return {
+              ...c,
+              messages: lastMessage ? [lastMessage] : [],
+              updatedAt: lastMessage ? lastMessage.createdAt : c.updatedAt,
+            };
+          }
+          return c;
+        })
+      );
+    };
+
+    const handleRemovedFromGroup = ({ conversationId }: { conversationId: string }) => {
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(null);
+        setMessages([]);
+        toast("You were removed from this group", { icon: "ℹ️" });
+      }
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+    };
+
+    const handleGroupMembersUpdated = ({ conversationId }: { conversationId: string }) => {
+      loadConversations();
+      if (selectedConversation === conversationId) {
+        getMessages(conversationId).then((data) => setMessages(data || []));
+      }
+    };
+
+    const handleTypingEvent = () => {
+      setIsTyping(true);
+      setTimeout(() => setIsTyping(false), 1500);
+    };
+
+    socket.on("receiveMessage", handleMessage);
+    socket.on("messageDeleted", handleMessageDeleted);
+    socket.on("removedFromGroup", handleRemovedFromGroup);
+    socket.on("groupMembersUpdated", handleGroupMembersUpdated);
+    socket.on("groupInvite", loadConversations);
+    socket.on("userTyping", handleTypingEvent);
+
+    return () => {
+      socket.off("receiveMessage", handleMessage);
+      socket.off("messageDeleted", handleMessageDeleted);
+      socket.off("removedFromGroup", handleRemovedFromGroup);
+      socket.off("groupMembersUpdated", handleGroupMembersUpdated);
+      socket.off("groupInvite", loadConversations);
+      socket.off("userTyping", handleTypingEvent);
+    };
+  }, [selectedConversation, loadConversations]);
 
   useEffect(() => {
     loadConversations();
@@ -93,6 +175,24 @@ export default function MessagesPage() {
   const sendMessage = (content: string) => {
     if (!selectedConversation) return;
     socket.emit("sendMessage", { conversationId: selectedConversation, content });
+  };
+
+  const handleDeleteMessage = async (message: Message) => {
+    if (!selectedConversation) return;
+    // Optimistic removal
+    setMessages((prev) => prev.filter((m) => m.id !== message.id));
+    try {
+      await deleteMessageService(selectedConversation, message.id);
+      socket.emit("deleteMessage", {
+        messageId: message.id,
+        conversationId: selectedConversation,
+      });
+      toast.success("Message deleted");
+    } catch {
+      toast.error("Failed to delete message");
+      const data = await getMessages(selectedConversation);
+      setMessages(data || []);
+    }
   };
 
   const handleTyping = () => {
@@ -164,6 +264,7 @@ export default function MessagesPage() {
             onTyping={handleTyping}
             onFileUpload={handleFileUpload}
             onConversationUpdated={loadConversations}
+            onDeleteMessage={handleDeleteMessage}
             isTyping={isTyping}
             onBack={() => setSelectedConversation(null)}
           />

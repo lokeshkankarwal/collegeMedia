@@ -7,4 +7,7 @@ export declare const getConversation: (req: AuthRequest, res: Response) => Promi
 export declare const createGroupConversation: (req: AuthRequest, res: Response) => Promise<void>;
 export declare const deleteConversation: (req: AuthRequest, res: Response) => Promise<void>;
 export declare const updateGroupAdmin: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const deleteMessage: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const addGroupMembers: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const removeGroupMember: (req: AuthRequest, res: Response) => Promise<void>;
 //# sourceMappingURL=conversation.controller.d.ts.map
