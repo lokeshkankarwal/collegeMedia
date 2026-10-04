@@ -26,6 +26,13 @@ export const getMe = async (
         bio: true,
         avatarUrl: true,
         createdAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            posts: true,
+          },
+        },
       },
     });
 
@@ -36,7 +43,13 @@ export const getMe = async (
       return;
     }
 
-    res.status(200).json(user);
+    res.status(200).json({
+      ...user,
+      followersCount: user._count.followers,
+      followingCount: user._count.following,
+      postsCount: user._count.posts,
+      _count: undefined,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({

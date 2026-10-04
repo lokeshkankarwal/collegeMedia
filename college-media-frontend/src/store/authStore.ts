@@ -34,6 +34,9 @@ export const useAuthStore =
       localStorage.removeItem(
         "accessToken"
       );
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userName");
 
       set({
         accessToken: null,

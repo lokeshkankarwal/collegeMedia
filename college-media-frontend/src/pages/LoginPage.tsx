@@ -21,6 +21,7 @@ export default function LoginPage() {
       // localStorage.setItem("accessToken", response.data.accessToken);
 
       localStorage.setItem("accessToken", response.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
       setAccessToken(response.data.accessToken);
 
       localStorage.setItem("userId", response.data.user.id);

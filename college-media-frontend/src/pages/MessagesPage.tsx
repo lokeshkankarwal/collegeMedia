@@ -13,7 +13,7 @@ import {
 
 import { uploadFile } from "../services/upload.service";
 
-import { socket } from "../services/socket";
+import { connectSocket, socket } from "../services/socket";
 
 import type { Conversation } from "../types/conversation";
 import type { Message } from "../types/message";
@@ -48,7 +48,7 @@ export default function MessagesPage() {
   useEffect(() => {
     loadConversations();
 
-    socket.connect();
+    connectSocket();
 
     return () => {
       socket.disconnect();

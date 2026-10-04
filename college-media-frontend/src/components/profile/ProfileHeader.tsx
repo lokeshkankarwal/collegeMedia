@@ -86,16 +86,14 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
             mt-4
           "
           >
-            <span>{user.postsCount} Posts</span>
+            <span>{user.postsCount ?? 0} Posts</span>
 
             <span>
-              {user.followersCount}
-              Followers
+              {user.followersCount ?? 0} Followers
             </span>
 
             <span>
-              {user.followingCount}
-              Following
+              {user.followingCount ?? 0} Following
             </span>
           </div>
 
