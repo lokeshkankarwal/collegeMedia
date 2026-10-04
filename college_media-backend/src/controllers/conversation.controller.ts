@@ -208,7 +208,17 @@ export const getMyConversations = async (
       },
     });
 
-    res.json(conversations);
+    const sortedConversations = conversations.sort((a, b) => {
+      const timeA = a.messages?.[0]?.createdAt
+        ? new Date(a.messages[0].createdAt).getTime()
+        : new Date(a.updatedAt || a.createdAt).getTime();
+      const timeB = b.messages?.[0]?.createdAt
+        ? new Date(b.messages[0].createdAt).getTime()
+        : new Date(b.updatedAt || b.createdAt).getTime();
+      return timeB - timeA;
+    });
+
+    res.json(sortedConversations);
   } catch (error) {
     console.error("Get conversations error:", error);
     res.status(500).json({

@@ -10,4 +10,5 @@ export declare const getComments: (req: Request, // 🛠️ Fixed: Uses standard
 res: Response) => Promise<void>;
 export declare const updatePost: (req: AuthRequest, res: Response) => Promise<void>;
 export declare const deletePost: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const getPost: (req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=post.controller.d.ts.map

@@ -379,3 +379,59 @@ export const deletePost = async (
     });
   }
 };
+
+// ==========================================
+// 9. GET SINGLE POST
+// ==========================================
+export const getPost = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const postId = req.params.postId as string;
+
+    const post = await prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+        likes: {
+          select: {
+            userId: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      res.status(404).json({
+        message: "Post not found",
+      });
+      return;
+    }
+
+    res.json({
+      ...post,
+      likesCount: post._count.likes,
+      commentsCount: post._count.comments,
+    });
+  } catch (error) {
+    console.error("Get post error:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};

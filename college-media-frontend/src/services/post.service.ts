@@ -35,3 +35,8 @@ async (
     `/posts/${postId}`
   );
 };
+
+export const getPost = async (postId: string) => {
+  const response = await api.get(`/posts/${postId}`);
+  return response.data;
+};

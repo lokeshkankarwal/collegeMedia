@@ -2,13 +2,14 @@ import { Router } from "express";
 
 import {
   createPost,
-    getPosts,
-    likePost,
-    unlikePost,
-    addComment,
-    getComments,
-    updatePost,
-    deletePost
+  getPosts,
+  getPost,
+  likePost,
+  unlikePost,
+  addComment,
+  getComments,
+  updatePost,
+  deletePost,
 } from "../controllers/post.controller.js";
 
 import {
@@ -53,7 +54,7 @@ router.delete(
   deletePost
 );
 
+router.get("/:postId", getPost);
 router.get("/", getPosts);
-
 
 export default router;

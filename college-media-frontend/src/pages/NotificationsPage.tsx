@@ -92,8 +92,20 @@ export default function NotificationsPage() {
 
     if (n.type === "FOLLOW") {
       navigate(`/profile/${n.sender.id}`);
-    } else if (n.type === "LIKE" || n.type === "COMMENT") {
-      navigate("/");
+    } else if (n.type === "LIKE") {
+      const targetPostId = n.postId || n.post?.id;
+      if (targetPostId) {
+        navigate(`/?post=${targetPostId}`);
+      } else {
+        navigate("/");
+      }
+    } else if (n.type === "COMMENT") {
+      const targetPostId = n.postId || n.post?.id;
+      if (targetPostId) {
+        navigate(`/?post=${targetPostId}&comments=true`);
+      } else {
+        navigate("/");
+      }
     }
   };
 

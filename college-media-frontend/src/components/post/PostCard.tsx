@@ -9,6 +9,8 @@ interface Props {
   currentUserId: string;
   onLike: (postId: string) => void;
   onDelete: (postId: string) => void;
+  isHighlighted?: boolean;
+  defaultShowComments?: boolean;
 }
 
 function timeAgo(date: string) {
@@ -23,15 +25,34 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString();
 }
 
-export default function PostCard({ post, currentUserId, onLike, onDelete }: Props) {
-  const [showComments, setShowComments] = useState(false);
+export default function PostCard({
+  post,
+  currentUserId,
+  onLike,
+  onDelete,
+  isHighlighted = false,
+  defaultShowComments = false,
+}: Props) {
+  const [showComments, setShowComments] = useState(defaultShowComments);
+
+  // If defaultShowComments becomes true (e.g. navigation via comment notification), ensure opened
+  if (defaultShowComments && !showComments) {
+    setShowComments(true);
+  }
 
   const isLiked =
     post.likes?.some((like) => like.userId === currentUserId) || false;
   const isOwner = post.author.id === currentUserId;
 
   return (
-    <div className="mb-4 rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition hover:shadow-md animate-float-in">
+    <div
+      id={`post-${post.id}`}
+      className={`mb-4 rounded-3xl border bg-white p-4 sm:p-5 shadow-sm transition-all duration-500 animate-float-in ${
+        isHighlighted
+          ? "border-indigo-400 ring-4 ring-indigo-500/20 shadow-lg shadow-indigo-100/50 bg-indigo-50/10"
+          : "border-slate-200 hover:shadow-md"
+      }`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">

@@ -17,6 +17,22 @@ import { FiMessageCircle } from "react-icons/fi";
 import type { Conversation } from "../types/conversation";
 import type { Message } from "../types/message";
 
+function sortConversations(convList: Conversation[]): Conversation[] {
+  return [...convList].sort((a, b) => {
+    const timeA = a.messages?.[0]?.createdAt
+      ? new Date(a.messages[0].createdAt).getTime()
+      : a.updatedAt
+      ? new Date(a.updatedAt).getTime()
+      : 0;
+    const timeB = b.messages?.[0]?.createdAt
+      ? new Date(b.messages[0].createdAt).getTime()
+      : b.updatedAt
+      ? new Date(b.updatedAt).getTime()
+      : 0;
+    return timeB - timeA;
+  });
+}
+
 export default function MessagesPage() {
   const [searchParams] = useSearchParams();
   const urlConversationId = searchParams.get("conversation");
@@ -39,7 +55,7 @@ export default function MessagesPage() {
     setConvLoading(true);
     try {
       const data = await getConversations();
-      setConversations(data || []);
+      setConversations(sortConversations(data || []));
     } catch {
       // silently handle
     } finally {
@@ -63,23 +79,21 @@ export default function MessagesPage() {
         });
       }
 
-      // 2. Update conversation list preview
+      // 2. Update conversation list preview and MOVE TO THE TOP
       setConversations((prev) => {
-        const exists = prev.some((c) => c.id === message.conversationId);
-        if (!exists) {
+        const targetConv = prev.find((c) => c.id === message.conversationId);
+        if (!targetConv) {
           loadConversations();
           return prev;
         }
-        return prev.map((c) => {
-          if (c.id === message.conversationId) {
-            return {
-              ...c,
-              messages: [message],
-              updatedAt: message.createdAt,
-            };
-          }
-          return c;
-        });
+        const updatedTarget: Conversation = {
+          ...targetConv,
+          messages: [message],
+          updatedAt: message.createdAt,
+        };
+        const rest = prev.filter((c) => c.id !== message.conversationId);
+        // Move conversation with new message immediately to position 0 (top of list)
+        return [updatedTarget, ...rest];
       });
     };
 
@@ -97,9 +111,9 @@ export default function MessagesPage() {
         setMessages((prev) => prev.filter((m) => m.id !== messageId));
       }
 
-      // 2. Update conversation list preview with remaining last message
-      setConversations((prev) =>
-        prev.map((c) => {
+      // 2. Update conversation list preview with remaining last message and re-sort
+      setConversations((prev) => {
+        const updated = prev.map((c) => {
           if (c.id === conversationId) {
             return {
               ...c,
@@ -108,8 +122,9 @@ export default function MessagesPage() {
             };
           }
           return c;
-        })
-      );
+        });
+        return sortConversations(updated);
+      });
     };
 
     const handleRemovedFromGroup = ({ conversationId }: { conversationId: string }) => {

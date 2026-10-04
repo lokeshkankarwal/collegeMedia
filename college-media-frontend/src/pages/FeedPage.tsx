@@ -1,34 +1,80 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import CreatePost from "../components/post/CreatePost";
 import PostCard from "../components/post/PostCard";
 import { PostSkeleton, EmptyState, ErrorState, PageHeader } from "../components/common/UI";
 import { uploadFile } from "../services/upload.service";
-import { getFeedPosts, createPost, deletePost } from "../services/post.service";
+import { getFeedPosts, getPost, createPost, deletePost } from "../services/post.service";
 import { toggleLike } from "../services/like.service";
 import type { Post } from "../types/post";
 
 export default function FeedPage() {
+  const [searchParams] = useSearchParams();
+  const targetPostId = searchParams.get("post");
+  const openComments = searchParams.get("comments") === "true";
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
   const currentUserId = localStorage.getItem("userId") || "";
 
-  const doLoadPosts = async () => {
+  const doLoadPosts = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
       const data = await getFeedPosts();
-      setPosts(data.posts || []);
+      let loadedPosts: Post[] = data.posts || [];
+
+      // If notification targeted a specific post that is not in the feed page, fetch it directly
+      if (targetPostId && !loadedPosts.some((p) => p.id === targetPostId)) {
+        try {
+          const single = await getPost(targetPostId);
+          if (single?.id) {
+            loadedPosts = [single, ...loadedPosts];
+          }
+        } catch {
+          // silently handle if post was deleted or unreachable
+        }
+      }
+
+      setPosts(loadedPosts);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [targetPostId]);
 
-  useEffect(() => { doLoadPosts(); }, []);
+  useEffect(() => {
+    doLoadPosts();
+  }, [doLoadPosts]);
+
+  // Set highlight timer when targetPostId is present
+  useEffect(() => {
+    if (targetPostId) {
+      setHighlightedPostId(targetPostId);
+      const timer = setTimeout(() => {
+        setHighlightedPostId(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [targetPostId]);
+
+  // Smooth scroll to targeted post
+  useEffect(() => {
+    if (!loading && targetPostId && posts.some((p) => p.id === targetPostId)) {
+      const scrollTimer = setTimeout(() => {
+        const element = document.getElementById(`post-${targetPostId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 250);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [loading, targetPostId, posts]);
 
   const handleCreatePost = async (content: string, image?: File) => {
     try {
@@ -114,6 +160,8 @@ export default function FeedPage() {
               currentUserId={currentUserId}
               onLike={handleLike}
               onDelete={handleDelete}
+              isHighlighted={post.id === highlightedPostId}
+              defaultShowComments={openComments && post.id === targetPostId}
             />
           ))}
         </div>

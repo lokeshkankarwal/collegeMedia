@@ -61,7 +61,7 @@ export default function CreatePost({ onSubmit }: Props) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="What's on your mind? (Ctrl+Enter to post)"
+            placeholder="What's on your mind?"
             rows={3}
             className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
           />
