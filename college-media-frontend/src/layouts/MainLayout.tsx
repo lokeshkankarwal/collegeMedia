@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Sidebar from "../components/common/Sidebar";
+import { FiCompass } from "react-icons/fi";
 
 interface Props {
   children: ReactNode;
@@ -9,47 +10,10 @@ export default function MainLayout({
   children,
 }: Props) {
   return (
-    /* Responsive shell: column flow on small screens, row on md+ */
-    <div className="flex min-h-screen flex-col md:flex-row overflow-x-hidden w-full">
-
+    <div className="min-h-screen bg-[#f5f7fb] md:flex">
       <Sidebar />
-
-      <main
-        className="
-        flex-1
-        w-full
-        min-w-0
-        max-w-3xl
-        mx-auto
-        border-x
-        p-4
-        sm:p-5
-        md:p-6
-        pb-20
-        md:pb-6
-      "
-      >
-        {children}
-      </main>
-
-      <aside
-        className="
-        hidden
-        lg:block
-        w-80
-        shrink-0
-        p-6
-      "
-      >
-        <h2 className="font-bold text-xl">
-          College Media
-        </h2>
-
-        <p className="mt-3 text-gray-500">
-          AI Assistant Coming Soon
-        </p>
-      </aside>
-
+      <main className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-8"><div className="mx-auto w-full max-w-3xl">{children}</div></main>
+      <aside className="hidden w-72 shrink-0 px-5 py-7 xl:block"><div className="sticky top-7 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-6 text-white shadow-xl shadow-indigo-200"><FiCompass className="mb-5 text-2xl" /><h2 className="text-xl font-bold">Make your campus smaller.</h2><p className="mt-2 text-sm leading-6 text-indigo-100">Share ideas, find your people, and keep the conversation moving.</p></div></aside>
     </div>
   );
 }

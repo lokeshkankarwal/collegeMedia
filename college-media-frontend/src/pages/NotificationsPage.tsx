@@ -1,273 +1,125 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
-
-import {
-  getNotifications,
-  markAllNotificationsRead,
-} from "../services/notification.service";
+import { getNotifications, markAllNotificationsRead } from "../services/notification.service";
+import { Avatar, Button, CardSkeleton, EmptyState, PageHeader } from "../components/common/UI";
+import { FiBell, FiCheckCircle } from "react-icons/fi";
 
 interface Notification {
   id: string;
-
-  type:
-    | "LIKE"
-    | "COMMENT"
-    | "FOLLOW"
-    | "COMMUNITY_INVITE"
-    | "GROUP_INVITE";
-
+  type: "LIKE" | "COMMENT" | "FOLLOW" | "COMMUNITY_INVITE" | "GROUP_INVITE";
   isRead: boolean;
-
   createdAt: string;
-
-  sender: {
-    id: string;
-    name: string;
-    avatarUrl?: string;
-  };
+  sender: { id: string; name: string; avatarUrl?: string };
 }
 
+function timeAgo(date: string) {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const typeLabel: Record<Notification["type"], string> = {
+  LIKE: "liked your post ❤️",
+  COMMENT: "commented on your post 💬",
+  FOLLOW: "started following you 👤",
+  COMMUNITY_INVITE: "invited you to a community 🏘️",
+  GROUP_INVITE: "added you to a group 👥",
+};
+
 export default function NotificationsPage() {
-  const [
-    notifications,
-    setNotifications,
-  ] = useState<
-    Notification[]
-  >([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
-
-  const loadNotifications =
-    async () => {
-      try {
-        const data =
-          await getNotifications();
-
-        setNotifications(
-          data
-        );
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-  useEffect(() => {
-    loadNotifications();
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getNotifications();
+      setNotifications(data);
+    } catch {
+      toast.error("Unable to load notifications.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const markAllRead =
-    async () => {
-      try {
-        await markAllNotificationsRead();
+  useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
-        setNotifications(
-          (prev) =>
-            prev.map(
-              (
-                notification
-              ) => ({
-                ...notification,
-                isRead: true,
-              })
-            )
-        );
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-  const getMessage = (
-    notification: Notification
-  ) => {
-    switch (
-      notification.type
-    ) {
-      case "LIKE":
-        return `${notification.sender.name} liked your post ❤️`;
-
-      case "COMMENT":
-        return `${notification.sender.name} commented on your post 💬`;
-
-      case "FOLLOW":
-        return `${notification.sender.name} started following you 👤`;
-
-      case "COMMUNITY_INVITE":
-        return `${notification.sender.name} invited you to a community 🏘️`;
-
-      case "GROUP_INVITE":
-        return `${notification.sender.name} added you to a group 👥`;
-
-      default:
-        return "New notification";
+  const markAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success("All notifications marked as read.");
+    } catch {
+      toast.error("Unable to mark as read.");
     }
   };
 
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   return (
     <MainLayout>
-      <div className="w-full max-w-4xl mx-auto min-w-0">
-        <div
-          className="
-            flex
-            flex-col
-            sm:flex-row
-            justify-between
-            items-start
-            sm:items-center
-            gap-3
-            sm:gap-0
-            mb-6
-          "
-        >
-          <h1
-            className="
-              text-2xl
-              sm:text-3xl
-              font-bold
-            "
-          >
-            Notifications
-          </h1>
+      <PageHeader
+        eyebrow="Activity"
+        title={`Notifications${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+        action={
+          unreadCount > 0 ? (
+            <Button variant="secondary" size="sm" onClick={markAllRead}>
+              <FiCheckCircle />
+              Mark all read
+            </Button>
+          ) : undefined
+        }
+      />
 
-          <button
-            onClick={
-              markAllRead
-            }
-            className="
-              bg-black
-              text-white
-              px-4
-              py-2
-              rounded-lg
-              hover:opacity-90
-              w-full
-              sm:w-auto
-              shrink-0
-            "
-          >
-            Mark All Read
-          </button>
-        </div>
-
-        {loading && (
-          <p>
-            Loading...
-          </p>
-        )}
-
-        {!loading &&
-          notifications.length ===
-            0 && (
-            <div
-              className="
-                text-center
-                text-gray-500
-                mt-10
-              "
-            >
-              No Notifications
-            </div>
-          )}
-
+      {loading && (
         <div className="space-y-3">
-          {notifications.map(
-            (
-              notification
-            ) => (
-              <div
-                key={
-                  notification.id
-                }
-                className={`
-                  border
-                  rounded-xl
-                  p-4
-                  shadow-sm
-                  transition
-
-                  ${
-                    notification.isRead
-                      ? "bg-white"
-                      : "bg-blue-50 border-blue-200"
-                  }
-                `}
-              >
-                <div
-                  className="
-                    flex
-                    items-start
-                    sm:items-center
-                    gap-3
-                    sm:gap-4
-                    min-w-0
-                  "
-                >
-                  <img
-                    src={
-                      notification
-                        .sender
-                        .avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${notification.sender.name}`
-                    }
-                    alt={
-                      notification
-                        .sender.name
-                    }
-                    className="
-                      w-10
-                      h-10
-                      sm:w-12
-                      sm:h-12
-                      rounded-full
-                      object-cover
-                      shrink-0
-                    "
-                  />
-
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="font-medium break-words">
-                      {getMessage(
-                        notification
-                      )}
-                    </p>
-
-                    <p
-                      className="
-                        text-sm
-                        text-gray-500
-                        mt-1
-                      "
-                    >
-                      {new Date(
-                        notification.createdAt
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-
-                  {!notification.isRead && (
-                    <div
-                      className="
-                        w-3
-                        h-3
-                        rounded-full
-                        bg-blue-500
-                      "
-                    />
-                  )}
-                </div>
-              </div>
-            )
-          )}
+          {[1, 2, 3, 4].map((n) => <CardSkeleton key={n} rows={1} />)}
         </div>
-      </div>
+      )}
+
+      {!loading && notifications.length === 0 && (
+        <EmptyState
+          title="You're all caught up!"
+          description="No new notifications. Check back later."
+          icon={<FiBell />}
+        />
+      )}
+
+      {!loading && notifications.length > 0 && (
+        <div className="space-y-3">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className={`flex items-center gap-4 rounded-3xl border p-4 transition ${
+                n.isRead
+                  ? "border-slate-200 bg-white"
+                  : "border-indigo-200 bg-indigo-50"
+              }`}
+            >
+              <div className="relative shrink-0">
+                <Avatar name={n.sender.name} src={n.sender.avatarUrl} size="md" />
+                {!n.isRead && (
+                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-indigo-600 ring-2 ring-white" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-800 break-words">
+                  <span className="font-semibold">{n.sender.name}</span>{" "}
+                  {typeLabel[n.type] ?? "sent a notification"}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">{timeAgo(n.createdAt)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </MainLayout>
   );
 }

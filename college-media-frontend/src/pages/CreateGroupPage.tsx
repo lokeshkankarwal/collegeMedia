@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
-
+import { Avatar, Button, EmptyState, PageHeader, UserCardSkeleton } from "../components/common/UI";
 import { searchUsers } from "../services/search.service";
 import { createGroupConversation } from "../services/conversation.service";
+import { FiSearch, FiUsers, FiX } from "react-icons/fi";
 
 interface User {
   id: string;
@@ -14,271 +15,170 @@ interface User {
 
 export default function CreateGroupPage() {
   const navigate = useNavigate();
-
   const [groupName, setGroupName] = useState("");
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSearch = async () => {
-  try {
-    const result = await searchUsers(query);
+  const currentUserId = localStorage.getItem("userId") || "";
 
-    const currentUserId =
-      localStorage.getItem("userId");
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!query.trim()) { setUsers([]); setSearched(false); return; }
 
-    const filteredUsers =
-      result.filter(
-        (user: User) =>
-          user.id !== currentUserId
-      );
+    debounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      setSearched(true);
+      try {
+        const result = await searchUsers(query);
+        setUsers(result.filter((u: User) => u.id !== currentUserId));
+      } catch {
+        setUsers([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
 
-    setUsers(filteredUsers);
-  } catch (error) {
-    console.error(error);
-  }
-};
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, currentUserId]);
 
   const toggleUser = (user: User) => {
-    const exists = selectedUsers.some(
-      (u) => u.id === user.id
+    const exists = selectedUsers.some((u) => u.id === user.id);
+    setSelectedUsers(exists
+      ? selectedUsers.filter((u) => u.id !== user.id)
+      : [...selectedUsers, user]
     );
-
-    if (exists) {
-      setSelectedUsers(
-        selectedUsers.filter(
-          (u) => u.id !== user.id
-        )
-      );
-    } else {
-      setSelectedUsers([
-        ...selectedUsers,
-        user,
-      ]);
-    }
   };
 
   const createGroup = async () => {
+    if (!groupName.trim()) { toast.error("Please enter a group name."); return; }
+    if (selectedUsers.length === 0) { toast.error("Please select at least one member."); return; }
+    setCreating(true);
     try {
-      if (!groupName.trim()) {
-        alert("Group name is required");
-        return;
-      }
-
-      if (selectedUsers.length === 0) {
-        alert(
-          "Please select at least one member"
-        );
-        return;
-      }
-
-      const conversation =
-        await createGroupConversation({
-          name: groupName,
-          participants:
-            selectedUsers.map(
-              (user) => user.id
-            ),
-        });
-
-      navigate(
-        `/messages?conversation=${conversation.id}`
-      );
-    } catch (error) {
-      console.error(error);
+      const conversation = await createGroupConversation({
+        name: groupName,
+        participants: selectedUsers.map((u) => u.id),
+      });
+      toast.success("Group created!");
+      navigate(`/messages?conversation=${conversation.id}`);
+    } catch {
+      toast.error("Unable to create group. Please try again.");
+    } finally {
+      setCreating(false);
     }
   };
 
   return (
     <MainLayout>
-      <div className="w-full max-w-3xl mx-auto min-w-0">
-        <h1
-          className="
-            text-2xl
-            sm:text-3xl
-            font-bold
-            mb-4
-            sm:mb-6
-            text-left
-          "
-        >
-          Create Group
-        </h1>
+      <PageHeader eyebrow="Messages" title="Create Group" />
 
+      {/* Group Name */}
+      <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <label className="mb-1 block text-sm font-semibold text-slate-700">Group name</label>
         <input
-          placeholder="Group Name"
+          type="text"
+          placeholder="e.g. CS 2025 Study Group"
           value={groupName}
-          onChange={(e) =>
-            setGroupName(e.target.value)
-          }
-          className="
-            border
-            rounded-lg
-            p-3
-            w-full
-            mb-4
-            min-h-[44px]
-          "
+          onChange={(e) => setGroupName(e.target.value)}
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
         />
+      </div>
 
-        <div
-          className="
-            flex
-            flex-col
-            sm:flex-row
-            gap-3
-            mb-6
-          "
-        >
-          <input
-            placeholder="Search Users"
-            value={query}
-            onChange={(e) =>
-              setQuery(e.target.value)
-            }
-            className="
-              flex-1
-              w-full
-              min-w-0
-              border
-              rounded-lg
-              p-3
-              min-h-[44px]
-            "
-          />
-
-          <button
-            onClick={handleSearch}
-            className="
-              bg-black
-              text-white
-              px-6
-              py-3
-              rounded-lg
-              w-full
-              sm:w-auto
-              shrink-0
-              min-h-[44px]
-            "
-          >
-            Search
-          </button>
-        </div>
-
-        {/* Selected Members */}
-        {selectedUsers.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-semibold mb-3">
-              Selected Members (
-              {selectedUsers.length})
-            </h2>
-
-            <div className="flex flex-wrap gap-2">
-              {selectedUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="
-                    px-3
-                    py-1
-                    bg-black
-                    text-white
-                    rounded-full
-                    text-sm
-                  "
-                >
-                  {user.name}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-3">
-          {users.map((user) => {
-            const selected =
-              selectedUsers.some(
-                (u) =>
-                  u.id === user.id
-              );
-
-            return (
+      {/* Selected Members */}
+      {selectedUsers.length > 0 && (
+        <div className="mb-4 rounded-3xl border border-indigo-200 bg-indigo-50 p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-indigo-600">
+            Selected members ({selectedUsers.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {selectedUsers.map((user) => (
               <div
                 key={user.id}
-                onClick={() =>
-                  toggleUser(user)
-                }
-                className={`
-                  border
-                  rounded-xl
-                  p-4
-                  cursor-pointer
-                  transition-colors
-                  ${
-                    selected
-                      ? "bg-gray-100"
-                      : "bg-white"
-                  }
-                `}
+                className="flex items-center gap-2 rounded-2xl bg-white border border-indigo-200 px-3 py-1.5 shadow-sm"
               >
-                <div
-                  className="
-                    flex
-                    items-center
-                    gap-3
-                    sm:gap-4
-                    min-w-0
-                  "
+                <Avatar name={user.name} src={user.avatarUrl} size="xs" />
+                <span className="text-xs font-semibold text-slate-800">{user.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${user.name}`}
+                  onClick={() => toggleUser(user)}
+                  className="grid h-4 w-4 place-items-center rounded-full text-slate-400 hover:bg-rose-100 hover:text-rose-500 transition"
                 >
-                  <img
-                    src={
-                      user.avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${user.name}`
-                    }
-                    alt={user.name}
-                    className="
-                      w-10
-                      h-10
-                      sm:w-12
-                      sm:h-12
-                      rounded-full
-                      object-cover
-                      shrink-0
-                    "
-                  />
-
-                  <h2 className="truncate flex-1 min-w-0 text-left">{user.name}</h2>
-
-                  <div className="ml-auto text-xl">
-                    {selected
-                      ? "✓"
-                      : ""}
-                  </div>
-                </div>
+                  <FiX className="text-xs" />
+                </button>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Search Users */}
+      <div className="mb-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <label className="mb-2 block text-sm font-semibold text-slate-700">Add members</label>
+        <div className="relative">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            placeholder="Search by name…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+          />
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {searchLoading && [1, 2].map((n) => <UserCardSkeleton key={n} />)}
+
+          {!searchLoading && searched && users.length === 0 && (
+            <p className="py-4 text-center text-sm text-slate-400">No users found.</p>
+          )}
+
+          {!searchLoading && !searched && (
+            <EmptyState
+              title="Search for members"
+              description="Type a name to find people to add to your group."
+              icon={<FiUsers />}
+            />
+          )}
+
+          {!searchLoading && users.map((user) => {
+            const selected = selectedUsers.some((u) => u.id === user.id);
+            return (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => toggleUser(user)}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                  selected
+                    ? "border-indigo-200 bg-indigo-50"
+                    : "border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50"
+                }`}
+              >
+                <Avatar name={user.name} src={user.avatarUrl} size="sm" />
+                <span className="flex-1 font-semibold text-slate-800 text-sm truncate">{user.name}</span>
+                <span className={`text-xs font-bold ${selected ? "text-indigo-600" : "text-slate-300"}`}>
+                  {selected ? "✓ Added" : "+ Add"}
+                </span>
+              </button>
             );
           })}
         </div>
-
-        <button
-          onClick={createGroup}
-          disabled={
-            !groupName.trim() ||
-            selectedUsers.length === 0
-          }
-          className="
-            mt-8
-            w-full
-            bg-black
-            text-white
-            p-4
-            rounded-xl
-            disabled:opacity-50
-            disabled:cursor-not-allowed
-          "
-        >
-          Create Group
-        </button>
       </div>
+
+      <Button
+        variant="primary"
+        size="lg"
+        onClick={createGroup}
+        loading={creating}
+        disabled={!groupName.trim() || selectedUsers.length === 0}
+        className="w-full"
+      >
+        {creating ? "Creating…" : "Create Group"}
+      </Button>
     </MainLayout>
   );
 }

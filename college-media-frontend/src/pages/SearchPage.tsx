@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import MainLayout from "../layouts/MainLayout";
-
 import { searchUsers } from "../services/search.service";
+import { Avatar, EmptyState, PageHeader, UserCardSkeleton } from "../components/common/UI";
+import { FiSearch } from "react-icons/fi";
 
-interface User {
+interface SearchUser {
   id: string;
   name: string;
   email: string;
@@ -15,205 +15,107 @@ interface User {
 }
 
 export default function SearchPage() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<SearchUser[]>([]);
+  const [searched, setSearched] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [query, setQuery] =
-    useState("");
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const [loading, setLoading] =
-    useState(false);
+    if (!query.trim()) {
+      setUsers([]);
+      setSearched(false);
+      return;
+    }
 
-  const [users, setUsers] =
-    useState<User[]>([]);
-
-  const handleSearch =
-    async () => {
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      setSearched(true);
       try {
-        setLoading(true);
-
-        const result =
-          await searchUsers(
-            query
-          );
-
+        const result = await searchUsers(query);
         setUsers(result);
-      } catch (error) {
-        console.error(error);
+      } catch {
+        setUsers([]);
       } finally {
         setLoading(false);
       }
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
+  }, [query]);
 
   return (
     <MainLayout>
-      <div className="w-full max-w-4xl mx-auto min-w-0">
+      <PageHeader eyebrow="Discover" title="Search Users" />
 
-        <h1
-          className="
-          text-2xl
-          sm:text-3xl
-          font-bold
-          mb-4
-          sm:mb-6
-          text-left
-        "
-        >
-          Explore Users
-        </h1>
-
-        <div
-          className="
-          flex
-          flex-col
-          sm:flex-row
-          gap-3
-          mb-8
-        "
-        >
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={query}
-            onChange={(e) =>
-              setQuery(
-                e.target.value
-              )
-            }
-            className="
-            flex-1
-            w-full
-            min-w-0
-            border
-            rounded-lg
-            p-3
-            min-h-[44px]
-          "
-          />
-
-          <button
-            onClick={
-              handleSearch
-            }
-            className="
-            bg-black
-            text-white
-            px-6
-            py-3
-            rounded-lg
-            w-full
-            sm:w-auto
-            shrink-0
-            min-h-[44px]
-          "
-          >
-            Search
-          </button>
-        </div>
-
-        {loading && (
-          <div>
-            Loading...
-          </div>
-        )}
-
-        {!loading &&
-          users.length ===
-            0 && (
-            <div
-              className="
-              text-gray-500
-            "
-            >
-              Search for users
-            </div>
-          )}
-
-        <div className="space-y-4">
-
-          {users.map(
-            (user) => (
-              <div
-                key={user.id}
-                onClick={() =>
-                  navigate(
-                    `/profile/${user.id}`
-                  )
-                }
-                className="
-                border
-                rounded-xl
-                p-4
-                bg-white
-                cursor-pointer
-                hover:shadow-md
-              "
-              >
-                <div
-                  className="
-                  flex
-                  items-center
-                  gap-3
-                  sm:gap-4
-                  min-w-0
-                "
-                >
-                  <img
-                    src={
-                      user.avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${user.name}`
-                    }
-                    alt={
-                      user.name
-                    }
-                    className="
-                    w-12
-                    h-12
-                    sm:w-14
-                    sm:h-14
-                    rounded-full
-                    object-cover
-                    shrink-0
-                  "
-                  />
-
-                  <div className="min-w-0 text-left flex-1">
-                    <h2
-                      className="
-                      text-lg
-                      font-semibold
-                    "
-                    >
-                      {user.name}
-                    </h2>
-
-                    <p
-                      className="
-                      text-gray-500
-                    "
-                    >
-                      {user.email}
-                    </p>
-
-                    {user.bio && (
-                      <p
-                        className="
-                        text-sm
-                        mt-1
-                      "
-                      >
-                        {user.bio}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-
-        </div>
-
+      {/* Search input */}
+      <div className="relative mb-6">
+        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+        <input
+          type="search"
+          placeholder="Search by name…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          autoFocus
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-800 shadow-sm placeholder-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+        />
       </div>
+
+      {/* Skeletons */}
+      {loading && (
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((n) => <UserCardSkeleton key={n} />)}
+        </div>
+      )}
+
+      {/* Empty / no-results */}
+      {!loading && !searched && (
+        <EmptyState
+          title="Find your classmates"
+          description="Start typing a name to search for users on College Media."
+          icon={<FiSearch />}
+        />
+      )}
+
+      {!loading && searched && users.length === 0 && (
+        <EmptyState
+          title="No users found"
+          description={`We couldn't find anyone matching "${query}". Try a different name.`}
+        />
+      )}
+
+      {/* Results */}
+      {!loading && users.length > 0 && (
+        <div className="space-y-3">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => navigate(`/profile/${user.id}`)}
+              className="flex w-full items-center gap-4 rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-indigo-200 hover:shadow-md"
+            >
+              <Avatar name={user.name} src={user.avatarUrl} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                {user.bio && (
+                  <p className="mt-1 text-xs text-slate-500 line-clamp-1">{user.bio}</p>
+                )}
+              </div>
+              {user.followersCount !== undefined && (
+                <span className="shrink-0 text-xs text-slate-400">
+                  {user.followersCount} followers
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </MainLayout>
   );
 }
