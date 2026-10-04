@@ -55,23 +55,34 @@ export const getMe = async (req, res) => {
 export const updateMe = async (req, res) => {
     try {
         const userId = req.userId; // 🛠️ Fixed: Asserting definite string signature
-        const { bio, branch, year, avatarUrl } = req.body;
+        const { name, bio, branch, year, avatarUrl } = req.body;
         if (year && typeof year !== "number") {
             res.status(400).json({
                 message: "Year must be a number",
             });
             return;
         }
+        const updateData = {};
+        if (name && typeof name === "string" && name.trim()) {
+            updateData.name = name.trim();
+        }
+        if (bio !== undefined) {
+            updateData.bio = bio ? String(bio).trim() : null;
+        }
+        if (branch !== undefined) {
+            updateData.branch = branch ? String(branch).trim() : null;
+        }
+        if (year !== undefined) {
+            updateData.year = typeof year === "number" ? year : null;
+        }
+        if (avatarUrl !== undefined) {
+            updateData.avatarUrl = avatarUrl ? String(avatarUrl).trim() : null;
+        }
         const updatedUser = await prisma.user.update({
             where: {
                 id: userId,
             },
-            data: {
-                bio,
-                branch,
-                year,
-                avatarUrl,
-            },
+            data: updateData,
             select: {
                 id: true,
                 name: true,

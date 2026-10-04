@@ -6,6 +6,7 @@ import EditProfileModal from "../components/profile/EditProfileModal";
 import PostCard from "../components/post/PostCard";
 import { PostSkeleton, EmptyState, PageHeader } from "../components/common/UI";
 import { getMe, updateProfile, getUserPosts } from "../services/user.service";
+import { uploadFile } from "../services/upload.service";
 import { deletePost } from "../services/post.service";
 import { toggleLike } from "../services/like.service";
 import type { Post } from "../types/post";
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const currentUserId = localStorage.getItem("userId") || "";
 
   const doLoad = async () => {
@@ -24,7 +26,7 @@ export default function ProfilePage() {
       const profile = await getMe();
       setUser(profile);
       const userPosts = await getUserPosts(profile.id);
-      setPosts(userPosts);
+      setPosts(userPosts || []);
     } catch {
       toast.error("Unable to load profile.");
     } finally {
@@ -32,7 +34,35 @@ export default function ProfilePage() {
     }
   };
 
-  useEffect(() => { doLoad(); }, []);
+  useEffect(() => {
+    doLoad();
+  }, []);
+
+  const handleDirectAvatarUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file (PNG, JPG, WEBP)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image file size must be under 10MB");
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const res = await uploadFile(file);
+      if (res?.imageUrl) {
+        await updateProfile({ avatarUrl: res.imageUrl });
+        setUser((prev) => (prev ? { ...prev, avatarUrl: res.imageUrl } : null));
+        toast.success("Profile picture updated!");
+      } else {
+        toast.error("Failed to upload image");
+      }
+    } catch {
+      toast.error("Failed to update profile picture");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleDelete = async (postId: string) => {
     try {
@@ -64,11 +94,13 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <MainLayout>
         <div className="mb-6 h-64 rounded-3xl skeleton" />
-        {[1, 2].map((n) => <PostSkeleton key={n} />)}
+        {[1, 2].map((n) => (
+          <PostSkeleton key={n} />
+        ))}
       </MainLayout>
     );
   }
@@ -78,14 +110,22 @@ export default function ProfilePage() {
   return (
     <MainLayout>
       <PageHeader eyebrow="Your account" title="Profile" />
-      <ProfileHeader user={user} isMe={true} onEdit={() => setEditing(true)} onFollow={() => {}} />
+      <ProfileHeader
+        user={user}
+        isMe={true}
+        onEdit={() => setEditing(true)}
+        onFollow={() => {}}
+        onAvatarUpload={handleDirectAvatarUpload}
+        avatarUploading={avatarUploading}
+      />
 
       {editing && (
         <EditProfileModal
           name={user.name}
           bio={user.bio}
-          onSave={async (name, bio) => {
-            await updateProfile({ name, bio });
+          avatarUrl={user.avatarUrl}
+          onSave={async (name, bio, avatarUrl) => {
+            await updateProfile({ name, bio, avatarUrl });
             setEditing(false);
             doLoad();
             toast.success("Profile updated!");
