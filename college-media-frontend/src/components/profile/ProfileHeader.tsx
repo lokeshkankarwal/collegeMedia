@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, Button } from "../common/UI";
+import { FiCamera } from "react-icons/fi";
+import { Avatar, Button, Spinner } from "../common/UI";
 import type { User } from "../../types/user";
 
 interface Props {
@@ -7,10 +9,29 @@ interface Props {
   isMe: boolean;
   onFollow: () => void;
   onEdit: () => void;
+  onAvatarUpload?: (file: File) => Promise<void>;
+  avatarUploading?: boolean;
 }
 
-export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
+export default function ProfileHeader({
+  user,
+  isMe,
+  onFollow,
+  onEdit,
+  onAvatarUpload,
+  avatarUploading = false,
+}: Props) {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onAvatarUpload) return;
+    await onAvatarUpload(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const stat = (label: string, value: number, path?: string) => (
     <button
@@ -33,9 +54,37 @@ export default function ProfileHeader({ user, isMe, onFollow, onEdit }: Props) {
       <div className="px-5 pb-5">
         {/* Avatar overlapping banner */}
         <div className="flex flex-wrap items-end justify-between gap-3 -mt-10 sm:-mt-12">
-          <div className="ring-4 ring-white rounded-2xl">
+          <div className="relative group ring-4 ring-white rounded-2xl">
             <Avatar name={user.name} src={user.avatarUrl} size="xl" />
+
+            {avatarUploading && (
+              <div className="absolute inset-0 grid place-items-center rounded-2xl bg-black/50 backdrop-blur-xs">
+                <Spinner size="sm" />
+              </div>
+            )}
+
+            {isMe && onAvatarUpload && (
+              <>
+                <button
+                  type="button"
+                  title="Upload profile picture"
+                  disabled={avatarUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  <FiCamera className="text-xs" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleAvatarFile}
+                />
+              </>
+            )}
           </div>
+
           <div className="pb-1">
             {isMe ? (
               <Button variant="secondary" size="sm" onClick={onEdit}>

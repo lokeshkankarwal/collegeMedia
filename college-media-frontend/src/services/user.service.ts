@@ -24,20 +24,19 @@ async (
   return response.data;
 };
 
-export const updateProfile =
-async (
+export const updateProfile = async (
   data: {
-    name: string;
-    bio: string;
+    name?: string;
+    bio?: string;
     avatarUrl?: string;
+    branch?: string;
+    year?: number;
   }
 ) => {
-
-  const response =
-    await api.put(
-      "/users/me",
-      data
-    );
+  const response = await api.put(
+    "/users/me",
+    data
+  );
 
   return response.data;
 };
