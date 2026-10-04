@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
-import { getNotifications, markAllNotificationsRead } from "../services/notification.service";
+import { getNotifications, markAllNotificationsRead, markNotificationRead } from "../services/notification.service";
 import { Avatar, Button, CardSkeleton, EmptyState, PageHeader } from "../components/common/UI";
-import { FiBell, FiCheckCircle } from "react-icons/fi";
+import { FiBell, FiCheck, FiCheckCircle } from "react-icons/fi";
 
-interface Notification {
+interface NotificationItem {
   id: string;
-  type: "LIKE" | "COMMENT" | "FOLLOW" | "COMMUNITY_INVITE" | "GROUP_INVITE";
+  type: "LIKE" | "COMMENT" | "FOLLOW";
   isRead: boolean;
   createdAt: string;
+  postId?: string;
   sender: { id: string; name: string; avatarUrl?: string };
+  post?: { id: string; content?: string };
 }
 
 function timeAgo(date: string) {
@@ -24,23 +27,23 @@ function timeAgo(date: string) {
   return `${days}d ago`;
 }
 
-const typeLabel: Record<Notification["type"], string> = {
-  LIKE: "liked your post ❤️",
-  COMMENT: "commented on your post 💬",
-  FOLLOW: "started following you 👤",
-  COMMUNITY_INVITE: "invited you to a community 🏘️",
-  GROUP_INVITE: "added you to a group 👥",
+const typeDetails: Record<NotificationItem["type"], { text: string; icon: string }> = {
+  LIKE: { text: "liked your post", icon: "❤️" },
+  COMMENT: { text: "commented on your post", icon: "💬" },
+  FOLLOW: { text: "started following you", icon: "👤" },
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getNotifications();
-      setNotifications(data);
+      setNotifications(data || []);
     } catch {
       toast.error("Unable to load notifications.");
     } finally {
@@ -48,7 +51,9 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   const markAllRead = async () => {
     try {
@@ -56,11 +61,45 @@ export default function NotificationsPage() {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       toast.success("All notifications marked as read.");
     } catch {
-      toast.error("Unable to mark as read.");
+      toast.error("Unable to mark all as read.");
+    }
+  };
+
+  const handleMarkOneRead = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await markNotificationRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      toast.success("Notification marked as read");
+    } catch {
+      toast.error("Failed to mark notification as read");
+    }
+  };
+
+  const handleNotificationClick = async (n: NotificationItem) => {
+    if (!n.isRead) {
+      try {
+        await markNotificationRead(n.id);
+        setNotifications((prev) =>
+          prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+        );
+      } catch {
+        // silently proceed with navigation
+      }
+    }
+
+    if (n.type === "FOLLOW") {
+      navigate(`/profile/${n.sender.id}`);
+    } else if (n.type === "LIKE" || n.type === "COMMENT") {
+      navigate("/");
     }
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const filteredNotifications =
+    filter === "unread" ? notifications.filter((n) => !n.isRead) : notifications;
 
   return (
     <MainLayout>
@@ -77,47 +116,106 @@ export default function NotificationsPage() {
         }
       />
 
+      {/* Filter Tabs */}
+      <div className="mb-4 flex gap-2 border-b border-slate-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setFilter("all")}
+          className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+            filter === "all"
+              ? "bg-indigo-600 text-white shadow-sm shadow-indigo-100"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          All ({notifications.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter("unread")}
+          className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+            filter === "unread"
+              ? "bg-indigo-600 text-white shadow-sm shadow-indigo-100"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Unread ({unreadCount})
+        </button>
+      </div>
+
       {loading && (
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((n) => <CardSkeleton key={n} rows={1} />)}
+          {[1, 2, 3, 4].map((n) => (
+            <CardSkeleton key={n} rows={1} />
+          ))}
         </div>
       )}
 
-      {!loading && notifications.length === 0 && (
+      {!loading && filteredNotifications.length === 0 && (
         <EmptyState
-          title="You're all caught up!"
-          description="No new notifications. Check back later."
+          title={filter === "unread" ? "No unread notifications" : "You're all caught up!"}
+          description={
+            filter === "unread"
+              ? "You have read all your notifications."
+              : "No activity to show right now. Check back later."
+          }
           icon={<FiBell />}
         />
       )}
 
-      {!loading && notifications.length > 0 && (
+      {!loading && filteredNotifications.length > 0 && (
         <div className="space-y-3">
-          {notifications.map((n) => (
-            <div
-              key={n.id}
-              className={`flex items-center gap-4 rounded-3xl border p-4 transition ${
-                n.isRead
-                  ? "border-slate-200 bg-white"
-                  : "border-indigo-200 bg-indigo-50"
-              }`}
-            >
-              <div className="relative shrink-0">
-                <Avatar name={n.sender.name} src={n.sender.avatarUrl} size="md" />
+          {filteredNotifications.map((n) => {
+            const detail = typeDetails[n.type] || { text: "sent a notification", icon: "🔔" };
+            return (
+              <div
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={`flex items-center justify-between gap-4 rounded-3xl border p-4 transition cursor-pointer hover:shadow-md ${
+                  n.isRead
+                    ? "border-slate-200 bg-white"
+                    : "border-indigo-200 bg-indigo-50/70"
+                }`}
+              >
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                  <div className="relative shrink-0">
+                    <Avatar name={n.sender.name} src={n.sender.avatarUrl} size="md" />
+                    <span className="absolute -bottom-1 -right-1 text-sm bg-white rounded-full p-0.5 shadow-sm">
+                      {detail.icon}
+                    </span>
+                    {!n.isRead && (
+                      <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-indigo-600 ring-2 ring-white" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-800 break-words leading-relaxed">
+                      <span className="font-semibold text-slate-900">{n.sender.name}</span>{" "}
+                      {detail.text}
+                    </p>
+                    {n.post?.content && (
+                      <p className="mt-1 text-xs text-slate-500 italic truncate max-w-md">
+                        "{n.post.content}"
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-slate-400 font-medium">
+                      {timeAgo(n.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
                 {!n.isRead && (
-                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-indigo-600 ring-2 ring-white" />
+                  <button
+                    type="button"
+                    title="Mark as read"
+                    onClick={(e) => handleMarkOneRead(e, n.id)}
+                    className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-indigo-100 hover:text-indigo-600 transition shrink-0"
+                  >
+                    <FiCheck className="text-sm" />
+                  </button>
                 )}
               </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-800 break-words">
-                  <span className="font-semibold">{n.sender.name}</span>{" "}
-                  {typeLabel[n.type] ?? "sent a notification"}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-400">{timeAgo(n.createdAt)}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </MainLayout>

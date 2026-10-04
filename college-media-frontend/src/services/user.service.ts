@@ -54,3 +54,12 @@ async (
 
   return response.data;
 };
+export const getUserFollowers = async (userId: string) => {
+  const response = await api.get(`/users/${userId}/followers`);
+  return response.data;
+};
+
+export const getUserFollowing = async (userId: string) => {
+  const response = await api.get(`/users/${userId}/following`);
+  return response.data;
+};

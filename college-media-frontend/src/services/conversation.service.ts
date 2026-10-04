@@ -55,3 +55,24 @@ export const createConversation =
 
     return response.data;
   };
+export const getConversationDetails = async (conversationId: string) => {
+  const response = await api.get(`/conversations/${conversationId}`);
+  return response.data;
+};
+
+export const deleteConversation = async (conversationId: string) => {
+  const response = await api.delete(`/conversations/${conversationId}`);
+  return response.data;
+};
+
+export const updateGroupAdmin = async (
+  conversationId: string,
+  targetUserId: string,
+  isAdmin: boolean
+) => {
+  const response = await api.patch(
+    `/conversations/${conversationId}/admins/${targetUserId}`,
+    { isAdmin }
+  );
+  return response.data;
+};

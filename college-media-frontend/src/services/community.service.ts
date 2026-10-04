@@ -89,3 +89,7 @@ async (
 
   return response.data;
 };
+export const deleteCommunity = async (communityId: string) => {
+  const response = await api.delete(`/communities/${communityId}`);
+  return response.data;
+};

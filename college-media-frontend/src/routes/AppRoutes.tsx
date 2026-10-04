@@ -2,6 +2,8 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 import FeedPage from "../pages/FeedPage";
 import MessagesPage from "../pages/MessagesPage";
 import CommunitiesPage from "../pages/ComunitiesPage";
@@ -9,17 +11,21 @@ import CommunityPage from "../pages/CommunityPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import ProfilePage from "../pages/ProfilePage";
 import OtherUserProfilePage from "../pages/OtherUserProfilePage";
+import FollowersPage from "../pages/FollowersPage";
+import FollowingPage from "../pages/FollowingPage";
 import ProtectedRoute from "./ProtectedRoute";
 import CreateGroupPage from "../pages/CreateGroupPage";
 import AIAssistantPage from "../pages/AIAssistantPage";
 import SearchPage from "../pages/SearchPage";
+
 export default function AppRoutes() {
   return (
     <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route
           path="/"
@@ -34,6 +40,38 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <OtherUserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/followers"
+          element={
+            <ProtectedRoute>
+              <FollowersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/followers/:userId"
+          element={
+            <ProtectedRoute>
+              <FollowersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/following"
+          element={
+            <ProtectedRoute>
+              <FollowingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/following/:userId"
+          element={
+            <ProtectedRoute>
+              <FollowingPage />
             </ProtectedRoute>
           }
         />

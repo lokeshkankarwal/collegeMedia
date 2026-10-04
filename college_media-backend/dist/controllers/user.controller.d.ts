@@ -5,4 +5,6 @@ export declare const updateMe: (req: AuthRequest, res: Response) => Promise<void
 export declare const searchUsers: (req: Request, res: Response) => Promise<void>;
 export declare const getUserProfile: (req: Request, res: Response) => Promise<void>;
 export declare const getUserPosts: (req: Request, res: Response) => Promise<void>;
+export declare const getUserFollowers: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const getUserFollowing: (req: AuthRequest, res: Response) => Promise<void>;
 //# sourceMappingURL=user.controller.d.ts.map
