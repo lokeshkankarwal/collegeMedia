@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Avatar } from "../common/UI";
-import { FiMessageCircle } from "react-icons/fi";
+import { FiMessageCircle, FiTrash2 } from "react-icons/fi";
 import type { Conversation } from "../../types/conversation";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
   selectedId: string | null;
   currentUserId: string;
   onSelect: (id: string) => void;
+  onDeleteRequest?: (conversation: Conversation) => void;
   loading?: boolean;
   className?: string;
 }
@@ -16,9 +18,12 @@ export default function ConversationList({
   selectedId,
   currentUserId,
   onSelect,
+  onDeleteRequest,
   loading,
   className = "",
 }: Props) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
     <div
       className={`w-full flex-col border-r border-slate-200 md:w-72 md:flex shrink-0 overflow-y-auto ${className}`}
@@ -69,31 +74,54 @@ export default function ConversationList({
             const preview = conversation.messages?.[0]?.content || "No messages yet";
 
             const isSelected = selectedId === conversation.id;
+            const isHovered = hoveredId === conversation.id;
 
             return (
-              <button
+              <div
                 key={conversation.id}
-                type="button"
-                onClick={() => onSelect(conversation.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                  isSelected
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
+                onMouseEnter={() => setHoveredId(conversation.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                className="relative group mb-1"
               >
-                <Avatar name={avatarName} src={avatarSrc} size="md" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className="truncate text-sm font-semibold">{title}</p>
-                    {conversation.isGroup && (
-                      <span className="shrink-0 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
-                        Group
-                      </span>
-                    )}
+                <button
+                  type="button"
+                  onClick={() => onSelect(conversation.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
+                    isSelected
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <Avatar name={avatarName} src={avatarSrc} size="md" />
+                  <div className="min-w-0 flex-1 pr-6">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold">{title}</p>
+                      {conversation.isGroup && (
+                        <span className="shrink-0 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                          Group
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-slate-400 mt-0.5">{preview}</p>
                   </div>
-                  <p className="truncate text-xs text-slate-400">{preview}</p>
-                </div>
-              </button>
+                </button>
+
+                {onDeleteRequest && (
+                  <button
+                    type="button"
+                    title="Delete chat"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteRequest(conversation);
+                    }}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition ${
+                      isHovered || isSelected ? "opacity-100" : "opacity-0 md:opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    <FiTrash2 className="text-xs" />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

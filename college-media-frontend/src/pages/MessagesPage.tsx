@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import MainLayout from "../layouts/MainLayout";
 import ConversationList from "../components/chat/ConversationList";
 import ChatWindow from "../components/chat/ChatWindow";
-import { getConversations, getMessages } from "../services/conversation.service";
+import { getConversations, getMessages, deleteConversation } from "../services/conversation.service";
 import { uploadFile } from "../services/upload.service";
 import { connectSocket, socket } from "../services/socket";
-import { EmptyState } from "../components/common/UI";
+import { ConfirmDialog, EmptyState } from "../components/common/UI";
 import { FiMessageCircle } from "react-icons/fi";
 import type { Conversation } from "../types/conversation";
 import type { Message } from "../types/message";
@@ -20,6 +21,8 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [deletingConv, setDeletingConv] = useState<Conversation | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const currentUserId = localStorage.getItem("userId") || "";
 
@@ -57,7 +60,7 @@ export default function MessagesPage() {
     setConvLoading(true);
     try {
       const data = await getConversations();
-      setConversations(data);
+      setConversations(data || []);
     } catch {
       // silently handle
     } finally {
@@ -74,7 +77,7 @@ export default function MessagesPage() {
     socket.emit("joinConversation", conversationId);
     try {
       const data = await getMessages(conversationId);
-      setMessages(data);
+      setMessages(data || []);
     } catch {
       setMessages([]);
     }
@@ -111,6 +114,25 @@ export default function MessagesPage() {
     }
   };
 
+  const confirmDeleteConversation = async () => {
+    if (!deletingConv) return;
+    setDeleteLoading(true);
+    try {
+      await deleteConversation(deletingConv.id);
+      setConversations((prev) => prev.filter((c) => c.id !== deletingConv.id));
+      if (selectedConversation === deletingConv.id) {
+        setSelectedConversation(null);
+        setMessages([]);
+      }
+      toast.success("Conversation removed from your chat list");
+      setDeletingConv(null);
+    } catch {
+      toast.error("Failed to delete chat");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const chatName = selectedConversationData?.isGroup
     ? selectedConversationData.name
     : selectedConversationData?.participants?.find(
@@ -126,6 +148,7 @@ export default function MessagesPage() {
           selectedId={selectedConversation}
           currentUserId={currentUserId}
           onSelect={openConversation}
+          onDeleteRequest={(conv) => setDeletingConv(conv)}
           loading={convLoading}
           className={selectedConversation ? "hidden md:flex" : "flex"}
         />
@@ -136,9 +159,11 @@ export default function MessagesPage() {
             messages={messages}
             currentUserId={currentUserId}
             chatName={chatName}
+            conversation={selectedConversationData}
             onSend={sendMessage}
             onTyping={handleTyping}
             onFileUpload={handleFileUpload}
+            onConversationUpdated={loadConversations}
             isTyping={isTyping}
             onBack={() => setSelectedConversation(null)}
           />
@@ -152,6 +177,19 @@ export default function MessagesPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog for Chat Deletion */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingConv)}
+        title="Delete this chat?"
+        description="This conversation will be removed from your chat list. You can restart the conversation at any time."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDeleteConversation}
+        onClose={() => setDeletingConv(null)}
+      />
     </MainLayout>
   );
 }
